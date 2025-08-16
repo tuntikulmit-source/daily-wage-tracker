@@ -33,7 +33,7 @@
 <body class="text-gray-800 dark:text-gray-200">
 
     <!-- Login Container -->
-    <div id="login-container" class="min-h-screen flex flex-col items-center justify-center text-center p-4 hidden">
+    <div id="login-container" class="min-h-screen flex-col items-center justify-center text-center p-4 hidden">
         <h1 class="text-4xl font-bold text-amber-700 dark:text-amber-400">แอปบันทึกค่าจ้าง</h1>
         <p class="mt-2 text-lg text-gray-600 dark:text-gray-300">ลงชื่อเข้าใช้เพื่อบันทึกและซิงค์ข้อมูลของคุณ</p>
         <button id="login-btn" class="mt-8 inline-flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -45,13 +45,13 @@
     <div id="loading-container" class="min-h-screen flex flex-col items-center justify-center text-center p-4">
         <div class="text-gray-600 dark:text-gray-400 flex items-center gap-3">
             <svg class="w-8 h-8 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            <span class="text-lg">กำลังตรวจสอบการลงชื่อเข้าใช้...</span>
+            <span class="text-lg">กำลังโหลดแอปพลิเคชัน...</span>
         </div>
     </div>
 
-
     <!-- Main App Container -->
     <div id="app-container" class="container mx-auto p-2 sm:p-4 max-w-5xl hidden">
+        <!-- Header, Form, and Summary sections are identical to the previous version -->
         <header class="text-center mb-4 relative">
             <div class="flex justify-center items-center gap-4">
                 <img id="user-photo" class="w-10 h-10 rounded-full">
@@ -69,20 +69,11 @@
                 <button id="logout-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg></button>
             </div>
         </header>
-
-        <!-- Main Content (Calendar, Form, Summary) -->
         <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-4">
-            <div class="flex justify-between items-center mb-3">
-                <button id="prev-month" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">&lt;</button>
-                <h2 id="month-year" class="text-lg font-semibold"></h2>
-                <button id="next-month" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">&gt;</button>
-            </div>
-            <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                <div>อา</div><div>จ</div><div>อ</div><div>พ</div><div>พฤ</div><div>ศ</div><div>ส</div>
-            </div>
+            <div class="flex justify-between items-center mb-3"><button id="prev-month" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">&lt;</button><h2 id="month-year" class="text-lg font-semibold"></h2><button id="next-month" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">&gt;</button></div>
+            <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-600 dark:text-gray-400 mb-2"><div>อา</div><div>จ</div><div>อ</div><div>พ</div><div>พฤ</div><div>ศ</div><div>ส</div></div>
             <div id="calendar" class="grid grid-cols-7 gap-1"></div>
         </div>
-
         <div id="entry-form-container" class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-4">
             <h3 class="text-xl font-bold mb-3">บันทึกข้อมูลสำหรับวันที่: <span id="selected-date-display" class="text-blue-600 dark:text-blue-400"></span></h3>
             <form id="wage-form">
@@ -93,45 +84,15 @@
                 <div class="mt-6 p-4 bg-blue-50 dark:bg-gray-700/50 rounded-lg flex flex-col sm:flex-row justify-between items-center gap-4"><div class="text-center"><p class="text-lg">ยอดรวมของวันนี้</p><p id="total-today" class="text-3xl font-bold text-blue-700 dark:text-blue-400">0.00 บาท</p></div><div class="flex flex-wrap justify-center gap-2"><button type="submit" id="save-btn" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700">บันทึก</button><button type="button" id="clear-btn" class="px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600">เคลียร์</button><button type="button" id="delete-btn" class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700">ลบ</button></div></div>
             </form>
         </div>
-
         <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
             <h3 class="text-xl font-bold mb-3">สรุปยอด</h3>
-            <div class="flex border-b border-gray-200 dark:border-gray-600 mb-3">
-                <button data-period="1" class="period-tab flex-1 py-2 text-center border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 font-semibold">รอบวันที่ 1-15</button>
-                <button data-period="2" class="period-tab flex-1 py-2 text-center border-transparent text-gray-500 dark:text-gray-400">รอบวันที่ 16-สิ้นเดือน</button>
-            </div>
-            
-            <div class="relative my-4">
-                <input type="text" id="search-input" placeholder="ค้นหาวันที่ (dd/mm/yyyy) หรือรายละเอียด..." class="w-full pl-10 pr-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                <svg class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            </div>
-
+            <div class="flex border-b border-gray-200 dark:border-gray-600 mb-3"><button data-period="1" class="period-tab flex-1 py-2 text-center border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 font-semibold">รอบวันที่ 1-15</button><button data-period="2" class="period-tab flex-1 py-2 text-center border-transparent text-gray-500 dark:text-gray-400">รอบวันที่ 16-สิ้นเดือน</button></div>
+            <div class="relative my-4"><input type="text" id="search-input" placeholder="ค้นหาวันที่ (dd/mm/yyyy) หรือรายละเอียด..." class="w-full pl-10 pr-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"><svg class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
             <div id="summary-content">
-                <div class="summary-table-container overflow-x-auto mb-4">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600 text-xs">
-                        <thead class="bg-gray-50 dark:bg-gray-700/50">
-                            <tr>
-                                <th class="px-2 py-2 text-left font-medium text-gray-500 dark:text-gray-400 uppercase">วันที่</th>
-                                <th class="px-2 py-2 text-center font-medium text-gray-500 dark:text-gray-400 uppercase">กะ</th>
-                                <th class="px-2 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase">พื้นฐาน</th>
-                                <th class="px-2 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase">เที่ยว</th>
-                                <th class="px-2 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase">โอที</th>
-                                <th class="px-2 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase">พิเศษ</th>
-                                <th class="px-2 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase">รวม</th>
-                            </tr>
-                        </thead>
-                        <tbody id="summary-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600"></tbody>
-                    </table>
-                </div>
+                <div class="summary-table-container overflow-x-auto mb-4"><table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600 text-xs"><thead class="bg-gray-50 dark:bg-gray-700/50"><tr><th class="px-2 py-2 text-left font-medium text-gray-500 dark:text-gray-400 uppercase">วันที่</th><th class="px-2 py-2 text-center font-medium text-gray-500 dark:text-gray-400 uppercase">กะ</th><th class="px-2 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase">พื้นฐาน</th><th class="px-2 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase">เที่ยว</th><th class="px-2 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase">โอที</th><th class="px-2 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase">พิเศษ</th><th class="px-2 py-2 text-right font-medium text-gray-500 dark:text-gray-400 uppercase">รวม</th></tr></thead><tbody id="summary-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600"></tbody></table></div>
                 <div id="category-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm mb-4"></div>
-                <div class="mt-4 p-4 bg-green-50 dark:bg-green-900/50 rounded-lg text-center">
-                    <p class="text-lg">ยอดรวมสุทธิ</p>
-                    <p id="grand-total" class="text-3xl font-bold text-green-700 dark:text-green-400">0.00 บาท</p>
-                </div>
-                <div class="flex justify-center gap-2 mt-4">
-                     <button id="print-btn" class="px-4 py-2 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600">ปริ้น</button>
-                     <button id="backup-btn" class="px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-md hover:bg-purple-600">สำรองข้อมูล</button>
-                </div>
+                <div class="mt-4 p-4 bg-green-50 dark:bg-green-900/50 rounded-lg text-center"><p class="text-lg">ยอดรวมสุทธิ</p><p id="grand-total" class="text-3xl font-bold text-green-700 dark:text-green-400">0.00 บาท</p></div>
+                <div class="flex justify-center gap-2 mt-4"><button id="print-btn" class="px-4 py-2 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600">ปริ้น</button><button id="backup-btn" class="px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-md hover:bg-purple-600">สำรองข้อมูล</button></div>
             </div>
         </div>
     </div>
@@ -188,18 +149,28 @@
                 if (unsubscribe) unsubscribe();
                 wageData = {};
                 appContainer.classList.add('hidden');
+                loginContainer.style.display = 'flex'; // Use style.display for flex container
                 loginContainer.classList.remove('hidden');
             }
         });
 
-        // Check for redirect result on page load
-        getRedirectResult(auth).catch((error) => {
-            console.error("Error getting redirect result:", error);
-            // Hide loading and show login even if there's an error
-            loadingContainer.classList.add('hidden');
-            loginContainer.classList.remove('hidden');
+        // This promise resolves when auth state is first determined
+        const authReady = new Promise(resolve => {
+            const unsubscribe = onAuthStateChanged(auth, () => {
+                unsubscribe();
+                resolve();
+            });
         });
 
+        // Handle redirect result after we know auth is ready
+        authReady.then(() => {
+            getRedirectResult(auth).catch((error) => {
+                console.error("Error getting redirect result:", error);
+                loadingContainer.classList.add('hidden');
+                loginContainer.style.display = 'flex';
+                loginContainer.classList.remove('hidden');
+            });
+        });
 
         async function signInWithGoogle() {
             const provider = new GoogleAuthProvider();
@@ -355,10 +326,14 @@
             document.getElementById('category-summary').innerHTML = `<div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">พื้นฐาน: <span class="font-semibold float-right">${categoryTotals.base.toFixed(2)}</span></div><div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">ค่าเที่ยว: <span class="font-semibold float-right">${categoryTotals.trips.toFixed(2)}</span></div><div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">โอที: <span class="font-semibold float-right">${categoryTotals.ot.toFixed(2)}</span></div><div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">พิเศษ: <span class="font-semibold float-right">${categoryTotals.special.toFixed(2)}</span></div>`;
         }
         
-        // --- Event Listeners ---
         let listenersAdded = false;
         function addEventListenersOnce() {
             if (listenersAdded) return;
+            document.getElementById('login-btn').addEventListener('click', () => {
+                loginContainer.classList.add('hidden');
+                loadingContainer.classList.remove('hidden');
+                signInWithGoogle();
+            });
             document.getElementById('logout-btn').addEventListener('click', signOutUser);
             document.getElementById('prev-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); });
             document.getElementById('next-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); });
@@ -386,13 +361,10 @@
             document.getElementById('search-input').addEventListener('input', () => updateSummary());
             listenersAdded = true;
         }
+        
+        addEventListenersOnce(); // Call it once on script load
 
-        document.getElementById('login-btn').addEventListener('click', () => {
-            loginContainer.classList.add('hidden');
-            loadingContainer.classList.remove('hidden');
-            signInWithGoogle();
-        });
-
+        // --- Helper functions ---
         function setSelectedDate(dateStr) { selectedDate = dateStr; document.getElementById('selected-date-display').textContent = new Date(dateStr + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }); loadDataForDate(dateStr); renderCalendar(); }
         function renderCalendar() { const calendarEl = document.getElementById('calendar'); calendarEl.innerHTML = ''; const year = currentDate.getFullYear(); const month = currentDate.getMonth(); document.getElementById('month-year').textContent = `${currentDate.toLocaleString('th-TH', { month: 'long' })} ${year + 543}`; const firstDayOfMonth = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate(); for (let i = 0; i < firstDayOfMonth; i++) { calendarEl.innerHTML += `<div class="calendar-day"></div>`; } for (let day = 1; day <= daysInMonth; day++) { const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const today = new Date().toISOString().split('T')[0]; let dayClasses = 'calendar-day-content border rounded-lg cursor-pointer transition-colors '; if (dateStr === selectedDate) dayClasses += 'bg-blue-500 text-white ring-2 ring-blue-300 dark:ring-blue-500'; else if (dateStr === today) dayClasses += 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'; else dayClasses += 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-gray-200 dark:border-gray-700'; let shiftIcon = ''; const dayData = wageData[dateStr]; if (dayData && (dayData.shift?.day || dayData.shift?.night)) { dayClasses += ' border-green-500 bg-green-50 dark:bg-green-900/50 dark:border-green-600'; if (dayData.shift?.day) shiftIcon = '☀️'; if (dayData.shift?.night) shiftIcon = '🌙'; if (dayData.shift?.day && dayData.shift?.night) shiftIcon = '☀️🌙'; } const dayEl = document.createElement('div'); dayEl.className = 'calendar-day'; dayEl.innerHTML = `<div class="${dayClasses}" data-date="${dateStr}"><span>${day}</span>${shiftIcon ? `<span class="shift-icon">${shiftIcon}</span>` : ''}</div>`; calendarEl.appendChild(dayEl); } }
         function loadDataForDate(dateStr) { form.reset(); form.querySelectorAll('input[type="number"], textarea').forEach(input => input.value = ''); const data = wageData[dateStr]; if (data) { document.getElementById('day-shift').checked = data.shift?.day || false; document.getElementById('night-shift').checked = data.shift?.night || false; document.getElementById('sht-trips').value = data.trips?.sht || ''; document.getElementById('a1pl-trips').value = data.trips?.a1pl || ''; document.getElementById('gw-trips').value = data.trips?.gw || ''; document.getElementById('kd-trips').value = data.trips?.kd || ''; document.getElementById('tru-trips').value = data.trips?.tru || ''; document.getElementById('dmet-trips').value = data.trips?.dmet || ''; document.getElementById('ot-pre').value = data.additional?.otPre || ''; document.getElementById('other-trips-pay').value = data.additional?.otherTripsPay || ''; document.getElementById('ot-post').value = data.additional?.otPost || ''; document.getElementById('special-meal').value = data.additional?.specialMeal || ''; document.getElementById('night-shift-pay').value = data.additional?.nightShiftPay || ''; document.getElementById('diligence-bonus').value = data.additional?.diligenceBonus || ''; document.getElementById('other-trips-details').value = data.additional?.otherTripsDetails || ''; } calculateTotal(); }
