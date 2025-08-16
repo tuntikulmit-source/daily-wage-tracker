@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แอปบันทึกค่าจ้างรายวัน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #f0f2f5;
+        }
+        /* --- Calendar Styles --- */
+        .flatpickr-calendar {
+            width: 100%;
+            box-shadow: none;
+        }
+        .flatpickr-day.work-day {
+            background: #dcfce7; /* Green-100 */
+            border-color: #4ade80; /* Green-400 */
+            color: #15803d;
+        }
+        .flatpickr-day.selected.work-day {
+            background: #2563eb;
+            border-color: #1d4ed8;
+        }
+        .flatpickr-day .shift-icon {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 10px;
+            line-height: 1;
+        }
+        .counter-input {
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
+            margin: 0;
+        }
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-secondary {
+            background-color: #4b5563;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #374151;
+        }
+        .btn-danger {
+            background-color: #dc2626;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .card-header {
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0.75rem 1rem;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="p-2 md:p-4">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-4">
+            <h1 class="text-2xl font-bold text-gray-800">แอปบันทึกค่าจ้างรายวัน</h1>
+            <p class="text-sm text-gray-500">รหัสผู้ใช้: <span id="userId" class="font-mono">กำลังโหลด...</span></p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Left Column: Calendar & Form -->
+            <div class="space-y-4">
+                <div class="bg-white rounded-lg shadow-md">
+                    <div class="card-header">
+                        <h2 class="text-lg font-semibold">ปฏิทิน</h2>
+                    </div>
+                    <div class="p-4">
+                        <div id="calendar-container"></div>
+                    </div>
+                </div>
+
+                <div id="form-container" class="bg-white rounded-lg shadow-md">
+                    <div class="card-header">
+                        <h2 class="text-lg font-semibold">บันทึกข้อมูล: <span id="selected-date" class="text-blue-600"></span></h2>
+                    </div>
+                    <div class="p-4">
+                        <!-- Shift Selection -->
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-medium mb-2">กะทำงาน</label>
+                            <div class="flex items-center space-x-4">
+                                <label class="flex items-center"><input type="checkbox" id="shift-day" class="mr-2 h-5 w-5">☀️ กะเช้า</label>
+                                <label class="flex items-center"><input type="checkbox" id="shift-night" class="mr-2 h-5 w-5">🌙 กะดึก (+100)</label>
+                            </div>
+                        </div>
+
+                        <!-- Fixed Values -->
+                        <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+                            <div class="bg-gray-100 p-2 rounded-md"><span class="block text-sm text-gray-500">ค่าจ้าง</span><span class="font-semibold">372</span></div>
+                            <div class="bg-gray-100 p-2 rounded-md"><span class="block text-sm text-gray-500">ค่าเดินทาง</span><span class="font-semibold">60</span></div>
+                            <div class="bg-gray-100 p-2 rounded-md"><span class="block text-sm text-gray-500">ค่าอาหาร</span><span class="font-semibold">50</span></div>
+                        </div>
+
+                        <!-- Trip Counters -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <!-- Dynamically generated counters will be inserted here -->
+                        </div>
+
+                        <!-- Additional Income -->
+                        <div class="space-y-3 mb-4">
+                            <h3 class="font-semibold text-gray-700 border-b pb-1">รายรับอื่นๆ</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="number" id="ot-pre" placeholder="ค่าโอทีหน้า" class="p-2 border rounded-md">
+                                <input type="number" id="ot-post" placeholder="ค่าโอทีหลัง" class="p-2 border rounded-md">
+                                <input type="number" id="other-trip-value" placeholder="ค่าเที่ยววิ่งงานอื่นๆ" class="p-2 border rounded-md">
+                                <input type="number" id="special-food" placeholder="ค่าอาหารพิเศษ" class="p-2 border rounded-md">
+                                <input type="number" id="night-allowance" placeholder="ค่ากะดึก" class="p-2 border rounded-md bg-gray-100" readonly>
+                                <input type="number" id="diligence-bonus" placeholder="เบี้ยขยัน" class="p-2 border rounded-md">
+                            </div>
+                            <textarea id="other-trip-details" placeholder="รายละเอียดเที่ยววิ่งงานอื่นๆ" class="w-full p-2 border rounded-md" rows="2"></textarea>
+                        </div>
+                        
+                        <!-- Total -->
+                        <div class="bg-blue-100 p-3 rounded-lg text-center mb-4">
+                            <span class="text-lg">ยอดรวมของวัน:</span>
+                            <span id="daily-total" class="text-2xl font-bold text-blue-700">0</span>
+                            <span class="text-lg">บาท</span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="grid grid-cols-3 gap-2">
+                            <button id="save-btn" class="p-2 rounded-md btn-primary font-semibold">บันทึก</button>
+                            <button id="clear-btn" class="p-2 rounded-md btn-secondary font-semibold">เคลียร์</button>
+                            <button id="delete-btn" class="p-2 rounded-md btn-danger font-semibold">ลบ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Summary -->
+            <div class="bg-white rounded-lg shadow-md">
+                 <div class="card-header">
+                    <h2 class="text-lg font-semibold">สรุปยอด</h2>
+                </div>
+                <div class="p-4">
+                    <div class="flex space-x-2 mb-3">
+                        <button id="range-1-15" class="flex-1 p-2 bg-gray-200 rounded-md hover:bg-gray-300">รอบวันที่ 1-15</button>
+                        <button id="range-16-end" class="flex-1 p-2 bg-gray-200 rounded-md hover:bg-gray-300">รอบวันที่ 16-สิ้นเดือน</button>
+                    </div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-semibold">สรุปตามช่วง: <span id="summary-range-label" class="text-blue-600"></span></h3>
+                         <div class="space-x-2">
+                            <button id="print-btn" class="p-1 px-3 text-sm rounded-md bg-green-500 text-white hover:bg-green-600">ปริ้น</button>
+                            <button id="backup-btn" class="p-1 px-3 text-sm rounded-md bg-indigo-500 text-white hover:bg-indigo-600">สำรองข้อมูล</button>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="p-2">วันที่</th>
+                                    <th class="p-2 text-right">รวม</th>
+                                </tr>
+                            </thead>
+                            <tbody id="summary-table-body">
+                               <!-- Data rows will be inserted here -->
+                            </tbody>
+                            <tfoot class="font-bold bg-gray-100">
+                               <!-- Summary rows will be inserted here -->
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold mb-4">ยืนยันการลบ</h3>
+            <p class="mb-6">คุณต้องการลบบันทึกของวันที่ <span id="delete-modal-date" class="font-bold"></span> ใช่หรือไม่?</p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirm-delete-btn" class="px-6 py-2 rounded-md btn-danger">ยืนยัน</button>
+                <button id="cancel-delete-btn" class="px-6 py-2 rounded-md btn-secondary">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAoMrrWGRmd9PuyYtGkK7ZQUDZWdgaoYaE",
+            authDomain: "daily-wage-tracking.firebaseapp.com",
+            projectId: "daily-wage-tracking",
+            storageBucket: "daily-wage-tracking.appspot.com", // Corrected domain
+            messagingSenderId: "147445421202",
+            appId: "1:147445421202:web:b9b078e749d8fc09b0424b",
+            measurementId: "G-QERWN01SXH"
+        };
+        const appId = "daily-wage-tracking"; // Using projectId as a unique identifier
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- App State ---
+        let db, auth, userId;
+        let calendarInstance;
+        let allLogs = {}; // Cache for all fetched logs { 'YYYY-MM-DD': data }
+        let selectedDateStr = '';
+
+        // --- Trip Definitions ---
+        const trips = [
+            { id: 'sht', label: 'SHT', step: 0.5 },
+            { id: 'a1pl', label: 'A1 P/L', step: 1 },
+            { id: 'gw', label: 'G/W', step: 1 },
+            { id: 'kd', label: 'KD', step: 1 },
+            { id: 'tru', label: 'TRU', step: 1 },
+            { id: 'dmet', label: 'DMET', step: 1 },
+            { id: 'dmet-pending', label: 'รับค้าง DMET', step: 1 },
+        ];
+        
+        // --- Initialization ---
+        async function initialize() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                const userCredential = await signInAnonymously(auth);
+                userId = userCredential.user.uid;
+                document.getElementById('userId').textContent = userId;
+
+                await fetchAllLogs();
+                initializeCalendar();
+                setupEventListeners();
+                createTripCounters();
+                calendarInstance.setDate(new Date(), true);
+
+            } catch (error) {
+                console.error("Initialization failed:", error);
+                document.getElementById('userId').textContent = "เกิดข้อผิดพลาด";
+            }
+        }
+
+        function createTripCounters() {
+            const container = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.gap-4.mb-4');
+            container.innerHTML = '';
+            trips.forEach(trip => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2';
+                div.innerHTML = `
+                    <label for="${trip.id}" class="w-28 text-sm font-medium text-gray-700">${trip.label}</label>
+                    <button data-target="${trip.id}" data-step="-${trip.step}" class="counter-btn w-8 h-8 rounded-md bg-gray-200 text-lg font-bold">-</button>
+                    <input type="number" id="${trip.id}" step="${trip.step}" class="counter-input w-full text-center p-2 border rounded-md" placeholder="">
+                    <button data-target="${trip.id}" data-step="${trip.step}" class="counter-btn w-8 h-8 rounded-md bg-gray-200 text-lg font-bold">+</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function initializeCalendar() {
+            calendarInstance = flatpickr("#calendar-container", {
+                inline: true,
+                locale: "th",
+                dateFormat: "Y-m-d",
+                onDayCreate: (dObj, dStr, fp, dayElem) => {
+                    const dateStr = fp.formatDate(dayElem.dateObj, "Y-m-d");
+                    if (allLogs[dateStr]) {
+                        dayElem.classList.add("work-day");
+                        const log = allLogs[dateStr];
+                        let icon = '';
+                        if (log.shiftDay) icon += '☀️';
+                        if (log.shiftNight) icon += '🌙';
+                        if (icon) {
+                            dayElem.innerHTML += `<span class="shift-icon">${icon}</span>`;
+                        }
+                    }
+                },
+                onChange: (selectedDates, dateStr, instance) => {
+                    selectedDateStr = dateStr;
+                    document.getElementById('selected-date').textContent = instance.formatDate(selectedDates[0], "d F Y");
+                    loadDataForDate(dateStr);
+                }
+            });
+        }
+
+        // --- Data Handling ---
+        async function fetchAllLogs() {
+            if (!userId) return;
+            const logsCollection = collection(db, `users/${userId}/work_logs`);
+            const querySnapshot = await getDocs(logsCollection);
+            allLogs = {};
+            querySnapshot.forEach(doc => {
+                allLogs[doc.id] = doc.data();
+            });
+            if(calendarInstance) calendarInstance.redraw();
+        }
+
+        function loadDataForDate(dateStr) {
+            clearForm();
+            const data = allLogs[dateStr];
+            if (data) {
+                document.getElementById('shift-day').checked = data.shiftDay || false;
+                document.getElementById('shift-night').checked = data.shiftNight || false;
+                trips.forEach(trip => {
+                    document.getElementById(trip.id).value = data[trip.id] || '';
+                });
+                document.getElementById('ot-pre').value = data.otPre || '';
+                document.getElementById('ot-post').value = data.otPost || '';
+                document.getElementById('other-trip-value').value = data.otherTripValue || '';
+                document.getElementById('special-food').value = data.specialFood || '';
+                document.getElementById('night-allowance').value = data.nightAllowance || '';
+                document.getElementById('diligence-bonus').value = data.diligenceBonus || '';
+                document.getElementById('other-trip-details').value = data.otherTripDetails || '';
+            }
+            calculateDailyTotal();
+        }
+
+        async function saveData() {
+            if (!selectedDateStr || !userId) {
+                alert("กรุณาเลือกวันที่ก่อนบันทึก");
+                return;
+            }
+            const data = {
+                shiftDay: document.getElementById('shift-day').checked,
+                shiftNight: document.getElementById('shift-night').checked,
+                otPre: parseFloat(document.getElementById('ot-pre').value) || 0,
+                otPost: parseFloat(document.getElementById('ot-post').value) || 0,
+                otherTripValue: parseFloat(document.getElementById('other-trip-value').value) || 0,
+                specialFood: parseFloat(document.getElementById('special-food').value) || 0,
+                nightAllowance: parseFloat(document.getElementById('night-allowance').value) || 0,
+                diligenceBonus: parseFloat(document.getElementById('diligence-bonus').value) || 0,
+                otherTripDetails: document.getElementById('other-trip-details').value,
+            };
+            trips.forEach(trip => {
+                data[trip.id] = parseFloat(document.getElementById(trip.id).value) || 0;
+            });
+
+            const docRef = doc(db, `users/${userId}/work_logs`, selectedDateStr);
+            try {
+                await setDoc(docRef, data);
+                allLogs[selectedDateStr] = data;
+                calendarInstance.redraw();
+                clearForm();
+                alert("บันทึกข้อมูลสำเร็จ!");
+            } catch (error) {
+                console.error("Error saving document: ", error);
+                alert("เกิดข้อผิดพลาดในการบันทึก");
+            }
+        }
+
+        async function deleteData() {
+            if (!selectedDateStr || !userId) {
+                alert("กรุณาเลือกวันที่จะลบ");
+                return;
+            }
+            const docRef = doc(db, `users/${userId}/work_logs`, selectedDateStr);
+            try {
+                await deleteDoc(docRef);
+                delete allLogs[selectedDateStr];
+                calendarInstance.redraw();
+                clearForm();
+                alert("ลบข้อมูลสำเร็จ!");
+            } catch (error) {
+                console.error("Error deleting document: ", error);
+                alert("เกิดข้อผิดพลาดในการลบ");
+            }
+        }
+
+        // --- UI & Calculations ---
+        function clearForm() {
+            document.getElementById('form-container').querySelectorAll('input[type="number"], textarea').forEach(el => el.value = '');
+            document.getElementById('form-container').querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+            document.getElementById('night-allowance').value = '';
+            calculateDailyTotal();
+        }
+        
+        function calculateDailyTotal() {
+            let total = 0;
+            if (!document.getElementById('shift-day').checked && !document.getElementById('shift-night').checked) {
+                 document.getElementById('daily-total').textContent = '0';
+                 return;
+            }
+
+            total += 372; // Wage
+            total += 60;  // Travel
+            total += 50;  // Food
+
+            total += (parseFloat(document.getElementById('sht').value) || 0) * 20;
+            const a1plTrips = parseFloat(document.getElementById('a1pl').value) || 0;
+            if (a1plTrips >= 1) total += 60;
+            if (a1plTrips >= 2) total += 80;
+            if (a1plTrips >= 3) total += 180 * (a1plTrips - 2);
+            total += (parseFloat(document.getElementById('gw').value) || 0) * 180;
+            total += (parseFloat(document.getElementById('kd').value) || 0) * 180;
+            total += (parseFloat(document.getElementById('tru').value) || 0) * 140;
+            total += (parseFloat(document.getElementById('dmet').value) || 0) * 160;
+            total += (parseFloat(document.getElementById('dmet-pending').value) || 0) * 140;
+
+            total += parseFloat(document.getElementById('ot-pre').value) || 0;
+            total += parseFloat(document.getElementById('ot-post').value) || 0;
+            total += parseFloat(document.getElementById('other-trip-value').value) || 0;
+            total += parseFloat(document.getElementById('special-food').value) || 0;
+            total += parseFloat(document.getElementById('night-allowance').value) || 0;
+            total += parseFloat(document.getElementById('diligence-bonus').value) || 0;
+
+            document.getElementById('daily-total').textContent = total.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function generateSummary(startDate, endDate) {
+            const body = document.getElementById('summary-table-body');
+            const foot = document.getElementById('summary-table-body').nextElementSibling;
+            body.innerHTML = '';
+            foot.innerHTML = '';
+
+            const summary = { total: 0, wage: 0, travel: 0, food: 0, sht: 0, a1pl: 0, gw: 0, kd: 0, tru: 0, dmet: 0, 'dmet-pending': 0, otPre: 0, otPost: 0, otherTripValue: 0, specialFood: 0, nightAllowance: 0, diligenceBonus: 0 };
+            const filteredDates = Object.keys(allLogs).filter(date => new Date(date) >= startDate && new Date(date) <= endDate).sort();
+
+            filteredDates.forEach(date => {
+                const log = allLogs[date];
+                let dailyTotal = 0;
+                dailyTotal += 372; summary.wage += 372;
+                dailyTotal += 60; summary.travel += 60;
+                dailyTotal += 50; summary.food += 50;
+                
+                const shtVal = (log.sht || 0) * 20; dailyTotal += shtVal; summary.sht += shtVal;
+                let a1plVal = 0;
+                if ((log.a1pl || 0) >= 1) a1plVal += 60;
+                if ((log.a1pl || 0) >= 2) a1plVal += 80;
+                if ((log.a1pl || 0) >= 3) a1plVal += 180 * ((log.a1pl || 0) - 2);
+                dailyTotal += a1plVal; summary.a1pl += a1plVal;
+
+                const gwVal = (log.gw || 0) * 180; dailyTotal += gwVal; summary.gw += gwVal;
+                const kdVal = (log.kd || 0) * 180; dailyTotal += kdVal; summary.kd += kdVal;
+                const truVal = (log.tru || 0) * 140; dailyTotal += truVal; summary.tru += truVal;
+                const dmetVal = (log.dmet || 0) * 160; dailyTotal += dmetVal; summary.dmet += dmetVal;
+                const dmetPendingVal = (log['dmet-pending'] || 0) * 140; dailyTotal += dmetPendingVal; summary['dmet-pending'] += dmetPendingVal;
+
+                ['otPre', 'otPost', 'otherTripValue', 'specialFood', 'nightAllowance', 'diligenceBonus'].forEach(key => {
+                    const val = log[key] || 0;
+                    dailyTotal += val;
+                    summary[key] += val;
+                });
+                
+                summary.total += dailyTotal;
+                const row = body.insertRow();
+                row.innerHTML = `<td class="p-2">${new Date(date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</td><td class="p-2 text-right">${dailyTotal.toLocaleString('th-TH')}</td>`;
+            });
+
+            const summaryMap = [ { label: 'ค่าจ้าง', value: summary.wage }, { label: 'ค่าเดินทาง', value: summary.travel }, { label: 'ค่าอาหาร', value: summary.food }, { label: 'SHT', value: summary.sht }, { label: 'A1 P/L', value: summary.a1pl }, { label: 'G/W', value: summary.gw }, { label: 'KD', value: summary.kd }, { label: 'TRU', value: summary.tru }, { label: 'DMET', value: summary.dmet }, { label: 'รับค้าง DMET', value: summary['dmet-pending'] }, { label: 'โอทีหน้า', value: summary.otPre }, { label: 'โอทีหลัง', value: summary.otPost }, { label: 'งานอื่นๆ', value: summary.otherTripValue }, { label: 'อาหารพิเศษ', value: summary.specialFood }, { label: 'ค่ากะดึก', value: summary.nightAllowance }, { label: 'เบี้ยขยัน', value: summary.diligenceBonus } ];
+            summaryMap.forEach(item => {
+                if (item.value > 0) {
+                    const row = foot.insertRow();
+                    row.innerHTML = `<td class="p-2 text-right">${item.label}</td><td class="p-2 text-right">${item.value.toLocaleString('th-TH')}</td>`;
+                }
+            });
+            const totalRow = foot.insertRow();
+            totalRow.className = 'text-xl bg-blue-100';
+            totalRow.innerHTML = `<td class="p-2 text-right">ยอดรวมสุทธิ</td><td class="p-2 text-right">${summary.total.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>`;
+        }
+
+        // --- Event Listeners ---
+        function setupEventListeners() {
+            document.getElementById('form-container').addEventListener('input', calculateDailyTotal);
+            document.getElementById('shift-night').addEventListener('change', (e) => {
+                document.getElementById('night-allowance').value = e.target.checked ? 100 : '';
+                calculateDailyTotal();
+            });
+            document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.gap-4.mb-4').addEventListener('click', (e) => {
+                if (e.target.classList.contains('counter-btn')) {
+                    const targetInput = document.getElementById(e.target.dataset.target);
+                    const step = parseFloat(e.target.dataset.step);
+                    let newValue = (parseFloat(targetInput.value) || 0) + step;
+                    targetInput.value = newValue > 0 ? newValue : '';
+                    calculateDailyTotal();
+                }
+            });
+            document.getElementById('save-btn').addEventListener('click', saveData);
+            document.getElementById('clear-btn').addEventListener('click', clearForm);
+            
+            const deleteModal = document.getElementById('delete-modal');
+            document.getElementById('delete-btn').addEventListener('click', () => {
+                 if (!selectedDateStr) { alert("กรุณาเลือกวันที่จะลบ"); return; }
+                document.getElementById('delete-modal-date').textContent = new Date(selectedDateStr).toLocaleDateString('th-TH', { dateStyle: 'long' });
+                deleteModal.style.display = 'block';
+            });
+            document.getElementById('cancel-delete-btn').addEventListener('click', () => deleteModal.style.display = 'none');
+            window.addEventListener('click', (event) => { if (event.target == deleteModal) deleteModal.style.display = "none"; });
+            document.getElementById('confirm-delete-btn').addEventListener('click', () => { deleteData(); deleteModal.style.display = 'none'; });
+
+            const today = new Date();
+            document.getElementById('range-1-15').addEventListener('click', () => {
+                const start = new Date(today.getFullYear(), today.getMonth(), 1);
+                const end = new Date(today.getFullYear(), today.getMonth(), 15);
+                document.getElementById('summary-range-label').textContent = `1-15 ${start.toLocaleDateString('th-TH', {month: 'long'})}`;
+                generateSummary(start, end);
+            });
+            document.getElementById('range-16-end').addEventListener('click', () => {
+                const start = new Date(today.getFullYear(), today.getMonth(), 16);
+                const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                document.getElementById('summary-range-label').textContent = `16-${end.getDate()} ${start.toLocaleDateString('th-TH', {month: 'long'})}`;
+                generateSummary(start, end);
+            });
+            
+            document.getElementById('print-btn').addEventListener('click', () => window.print());
+            document.getElementById('backup-btn').addEventListener('click', () => {
+                if(Object.keys(allLogs).length === 0) { alert('ไม่มีข้อมูลสำหรับสำรอง'); return; }
+                const dataStr = JSON.stringify(allLogs, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                const exportFileDefaultName = `wage_backup_${userId.substring(0,8)}_${new Date().toISOString().slice(0,10)}.json`;
+                let linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>
