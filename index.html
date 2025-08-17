@@ -72,6 +72,7 @@
                     <div id="user-action-area" class="mt-2">
                         </div>
                 </div>
+                
                 <div id="calendar-container" class="bg-tertiary p-3 rounded-md border border-border-color">
                     <div class="flex justify-between items-center mb-2">
                         <button id="prev-month" class="px-3 py-1 bg-interactive rounded-md hover:opacity-80">&lt;</button>
@@ -211,11 +212,11 @@
                 </div>
             </div>
             
-            <div id="recaptcha-container"></div>
-            
             <button id="close-login-modal" class="mt-6 w-full text-secondary hover:text-primary">ปิด</button>
         </div>
     </div>
+
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
@@ -272,8 +273,7 @@
         let dailyTripCounts = {};
         let notificationInterval = null;
         let confirmationResult = null;
-        window.recaptchaVerifier = null;
-
+        
         // --- Default Configs ---
         const FALLBACK_DEFAULT_VALUES = { base: 372, travel: 60, food: 50 };
         const DEFAULT_TRIP_CONFIGS = { SHT: { name: 'SHT', type: 'step', price: 20, step: 0.5, order: 1 }, A1PL: { name: 'A1 P/L', type: 'tier', prices: [60, 80, 180], order: 2 }, GW: { name: 'G/W', type: 'fixed', price: 180, order: 3 }, KD: { name: 'KD', type: 'fixed', price: 180, order: 4 }, TRU: { name: 'TRU', type: 'fixed', price: 140, order: 5 }, DMET: { name: 'DMET', type: 'fixed', price: 140, order: 6 } };
@@ -314,7 +314,6 @@
                 loginButton.textContent = 'เข้าสู่ระบบ / สำรองข้อมูล';
                 loginButton.onclick = () => {
                     document.getElementById('login-modal').classList.remove('hidden');
-                    setupRecaptcha();
                 };
                 userActionArea.appendChild(loginButton);
             } else {
@@ -346,30 +345,30 @@
                 alert('สร้างและเชื่อมต่อบัญชีสำเร็จ!');
                 document.getElementById('login-modal').classList.add('hidden');
             } catch (linkError) {
+                console.error("Email linking failed:", linkError);
                 if (linkError.code === 'auth/email-already-in-use') {
                     alert('อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น');
                 } else if (linkError.code === 'auth/weak-password') {
                      alert('รหัสผ่านไม่ปลอดภัย กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร');
                 } else {
-                    console.error('Email linking failed:', linkError);
                     alert(`ไม่สามารถเชื่อมต่อบัญชีได้: ${linkError.message}`);
                 }
             }
         }
         
         function setupRecaptcha() {
-            if (!window.recaptchaVerifier) {
-                window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                  'size': 'invisible',
-                  'callback': (response) => {
-                    // reCAPTCHA solved, allow signInWithPhoneNumber.
-                  },
-                   'expired-callback': () => {
-                        // Response expired. Ask user to solve reCAPTCHA again.
-                        alert('reCAPTCHA หมดอายุ กรุณาลองอีกครั้ง');
-                   }
-                });
-            }
+             // Create a new RecaptchaVerifier instance, binding it to the button.
+             window.recaptchaVerifier = new RecaptchaVerifier(auth, 'send-otp-btn', {
+                'size': 'invisible',
+                'callback': (response) => {
+                    // This callback is executed when reCAPTCHA is solved.
+                    // We can now proceed with sending the OTP.
+                    console.log("reCAPTCHA solved, ready to send OTP.");
+                },
+                'expired-callback': () => {
+                    alert('reCAPTCHA หมดอายุ กรุณาลองอีกครั้ง');
+                }
+            });
         }
 
         async function handleSendOtp() {
@@ -384,16 +383,18 @@
             sendOtpBtn.disabled = true;
             sendOtpBtn.textContent = 'กำลังส่ง...';
 
-            const appVerifier = window.recaptchaVerifier;
             try {
-                confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-                window.confirmationResult = confirmationResult;
+                // The reCAPTCHA will solve when the user clicks the button.
+                confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier);
+                
+                // Switch UI to OTP entry
                 document.getElementById('phone-entry-view').classList.add('hidden');
                 document.getElementById('otp-entry-view').classList.remove('hidden');
                 document.getElementById('phone-display').textContent = phoneNumber;
             } catch (error) {
                 console.error("SMS not sent:", error);
                 alert("เกิดข้อผิดพลาดในการส่ง OTP: " + error.message);
+                // Reset the verifier if it fails.
                 window.recaptchaVerifier.render().then(widgetId => {
                     grecaptcha.reset(widgetId);
                 });
@@ -405,13 +406,13 @@
 
         async function handleConfirmOtp() {
             const otp = document.getElementById('otp-input').value;
-            if (otp.length !== 6) {
+            if (!confirmationResult || otp.length !== 6) {
                 alert('กรุณากรอกรหัส OTP 6 หลัก');
                 return;
             }
             
             try {
-                const credential = PhoneAuthProvider.credential(window.confirmationResult.verificationId, otp);
+                const credential = PhoneAuthProvider.credential(confirmationResult.verificationId, otp);
                 await linkWithCredential(auth.currentUser, credential);
                 alert('เชื่อมต่อบัญชีด้วยเบอร์โทรศัพท์สำเร็จ!');
                 document.getElementById('login-modal').classList.add('hidden');
@@ -422,7 +423,7 @@
                 } else if (error.code === 'auth/credential-already-in-use') {
                     alert('เบอร์โทรศัพท์นี้ถูกใช้งานโดยบัญชีอื่นแล้ว');
                 } else {
-                    alert('เกิดข้อผิดพลาดในการยืนยัน OTP');
+                    alert(`เกิดข้อผิดพลาดในการยืนยัน OTP: ${error.message}`);
                 }
             }
         }
@@ -447,11 +448,21 @@
                 emailTabBtn.classList.remove('border-blue-600', 'text-primary');
                 phoneForm.classList.remove('hidden');
                 emailForm.classList.add('hidden');
+                // Setup reCAPTCHA only when the phone tab is active
+                setupRecaptcha();
             }
         }
         
         // --- (Rest of the application logic remains the same) ---
-        // --- Utility, Firestore, Calendar, Form, Data Fetching, Modals, etc. ---
+        // This is a placeholder for all the other functions from the previous correct version.
+        // It includes: updateSyncIcon, getWageCollectionRef, getTripConfigDocRef, getDefaultValuesDocRef,
+        // loadDefaultValues, saveDefaultValues, renderDefaultValuesDisplay, loadTripConfigs, saveTripConfigs,
+        // initializeAppState, renderCalendar, selectDate, renderTripCounters, updateTripCounterUI,
+        // updateAllTripCountersUI, updateTripDescription, updateAllTripDescriptions, handleTripCounterClick,
+        // calculateTripPay, clearForm, populateForm, handleSave, listenToSpecificPayPeriod,
+        // fetchAllDataForCalendarMarkers, updateSummary, updateSummaryCards, setupModal,
+        // scheduleNotificationCheck, handleNotificationToggle, attachEventListenersOnce, formatDate,
+        // getPayPeriodDates, getDataForExport, exportToExcel, exportToPDF, backupData, importData
         function updateSyncIcon(status) { syncIcon.classList.remove('text-yellow-500', 'text-green-500', 'text-red-500'); switch(status) { case 'synced': syncIcon.classList.add('text-green-500'); break; case 'error': syncIcon.classList.add('text-red-500'); break; case 'connecting': default: syncIcon.classList.add('text-yellow-500'); break; } }
         const getWageCollectionRef = () => collection(db, 'users', currentUserId, 'wages');
         const getTripConfigDocRef = () => doc(db, 'users', currentUserId, 'settings', 'tripConfig');
