@@ -49,14 +49,18 @@
         .card { background-color: var(--bg-secondary); border: 1px solid var(--border-color); }
         .text-summary-green { color: var(--color-green); } .text-summary-blue { color: var(--color-blue); }
         .text-summary-yellow { color: var(--color-yellow); } .text-summary-purple { color: var(--color-purple); }
+        .pay-period-btn.active { background-color: var(--color-blue); color: white; }
     </style>
 </head>
 <body class="p-2 md:p-4">
 
     <div id="app-container" class="max-w-7xl mx-auto">
         <header class="text-center mb-4 relative">
+            <div class="absolute top-0 left-0 flex items-center space-x-2">
+                <svg id="sync-icon" class="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M15.55 13.422a1.5 1.5 0 01.995 1.414 1.5 1.5 0 01-1.414 1.414H5.032a1.5 1.5 0 01-1.414-1.414 1.5 1.5 0 01.995-1.414l.112-.04a4.002 4.002 0 016.542-1.662 4.002 4.002 0 015.283 1.7zM10 3a5.5 5.5 0 00-5.5 5.5V9a.5.5 0 011 0v-.5A4.5 4.5 0 1110 13.5a.5.5 0 010 1A5.5 5.5 0 0010 3z" clip-rule="evenodd"></path></svg>
+                <span id="user-id-display" class="text-xs text-secondary truncate max-w-[150px]"></span>
+            </div>
             <h1 class="text-2xl md:text-3xl font-bold">แอปบันทึกค่าจ้างรายวัน</h1>
-            <p id="sync-status" class="text-sm text-secondary">กำลังเชื่อมต่อ...</p>
             <div class="absolute top-0 right-0 flex items-center space-x-2">
                 <button id="notification-toggle" class="p-2 rounded-full hover:bg-gray-500/20 transition" title="เปิด/ปิด การแจ้งเตือน">
                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
@@ -88,11 +92,11 @@
                     
                     <div class="grid grid-cols-2 gap-4">
                         <label class="flex items-center space-x-2 p-3 bg-tertiary border border-border-color rounded-lg cursor-pointer">
-                            <input type="checkbox" id="shift-day" class="form-checkbox h-5 w-5 text-blue-600 bg-tertiary border-border-color rounded focus:ring-blue-500">
+                            <input type="radio" name="shift" id="shift-day" value="day" class="form-radio h-5 w-5 text-blue-600 bg-tertiary border-border-color focus:ring-blue-500">
                             <span>☀️ กะเช้า</span>
                         </label>
                         <label class="flex items-center space-x-2 p-3 bg-tertiary border border-border-color rounded-lg cursor-pointer">
-                            <input type="checkbox" id="shift-night" class="form-checkbox h-5 w-5 text-indigo-600 bg-tertiary border-border-color rounded focus:ring-indigo-500">
+                            <input type="radio" name="shift" id="shift-night" value="night" class="form-radio h-5 w-5 text-indigo-600 bg-tertiary border-border-color focus:ring-indigo-500">
                             <span>🌙 กะดึก</span>
                         </label>
                     </div>
@@ -132,7 +136,13 @@
 
             <!-- Right Column: Summary and Tables -->
             <div class="card p-4 rounded-lg shadow-lg flex flex-col space-y-4">
-                <h3 class="text-xl font-semibold">สรุปข้อมูลรอบ: <span id="pay-period-display" class="text-blue-600 dark:text-blue-400"></span></h3>
+                <div>
+                    <h3 class="text-xl font-semibold">สรุปข้อมูลเดือน: <span id="pay-period-month-display" class="text-blue-600 dark:text-blue-400"></span></h3>
+                    <div class="mt-2 flex space-x-2">
+                        <button id="period-1-btn" class="pay-period-btn flex-1 py-2 px-4 text-sm font-semibold rounded-lg bg-interactive">รอบ 1-15</button>
+                        <button id="period-2-btn" class="pay-period-btn flex-1 py-2 px-4 text-sm font-semibold rounded-lg bg-interactive">รอบ 16-สิ้นเดือน</button>
+                    </div>
+                </div>
                 <div id="summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center"></div>
                 <div class="flex-grow overflow-y-auto">
                     <h4 class="text-lg font-semibold mb-2">ตารางสรุปรายวัน</h4>
@@ -140,8 +150,12 @@
                         <table class="w-full text-sm text-left">
                             <thead class="text-xs uppercase bg-tertiary text-secondary">
                                 <tr>
-                                    <th scope="col" class="px-4 py-2">วันที่</th><th scope="col" class="px-4 py-2">กะ</th>
-                                    <th scope="col" class="px-4 py-2">รวม</th><th scope="col" class="px-4 py-2">เที่ยววิ่ง</th>
+                                    <th class="px-2 py-2">วันที่</th>
+                                    <th class="px-2 py-2">พื้นฐาน</th>
+                                    <th class="px-2 py-2">โอที</th>
+                                    <th class="px-2 py-2">เที่ยว</th>
+                                    <th class="px-2 py-2">อื่นๆ</th>
+                                    <th class="px-2 py-2">รวม</th>
                                 </tr>
                             </thead>
                             <tbody id="daily-summary-table"></tbody>
@@ -216,7 +230,7 @@
     <script type="module">
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, onSnapshot, query, where, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Theme Toggle Logic ---
@@ -245,12 +259,11 @@
             apiKey: "AIzaSyAoMrrWGRmd9PuyYtGkK7ZQUDZWdgaoYaE",
             authDomain: "daily-wage-tracking.firebaseapp.com",
             projectId: "daily-wage-tracking",
-            storageBucket: "daily-wage-tracking.appspot.com", // Corrected storage bucket
+            storageBucket: "daily-wage-tracking.appspot.com",
             messagingSenderId: "147445421202",
             appId: "1:147445421202:web:b9b078e749d8fc09b0424b",
             measurementId: "G-QERWN01SXH"
         };
-        const appId = "daily-wage-app-v4"; // Using a consistent app ID
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -259,6 +272,7 @@
         let currentUserId = null;
         let currentDate = new Date();
         let selectedDate = new Date();
+        let currentPeriodView = 1; // 1 for 1-15, 2 for 16-end
         let unsubscribeFromWages = () => {};
         let allDataCache = {}; 
         let tripConfigs = {};
@@ -278,31 +292,38 @@
         };
 
         // --- DOM Elements ---
-        const syncStatusEl = document.getElementById('sync-status');
+        const syncIcon = document.getElementById('sync-icon');
+        const userIdDisplay = document.getElementById('user-id-display');
         const defaultValuesDisplay = document.getElementById('default-values-display');
 
         // --- Authentication ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUserId = user.uid;
-                syncStatusEl.textContent = 'ซิงค์ข้อมูลเรียบร้อย';
-                syncStatusEl.classList.remove('text-yellow-500');
-                syncStatusEl.classList.add('text-green-500');
+                userIdDisplay.textContent = user.uid;
+                updateSyncIcon('synced');
                 await Promise.all([loadTripConfigs(), loadDefaultValues()]);
                 initializeAppState();
             } else {
-                 syncStatusEl.textContent = 'กำลังตรวจสอบสิทธิ์...';
-                 syncStatusEl.classList.add('text-yellow-500');
+                updateSyncIcon('connecting');
                 try {
-                    // For production, you might use a different auth method
                     await signInAnonymously(auth);
                 } catch (error) {
                     console.error("Authentication failed:", error);
-                    syncStatusEl.textContent = 'การเชื่อมต่อล้มเหลว';
-                    syncStatusEl.classList.add('text-red-500');
+                    updateSyncIcon('error');
                 }
             }
         });
+        
+        function updateSyncIcon(status) {
+            syncIcon.classList.remove('text-yellow-500', 'text-green-500', 'text-red-500');
+            switch(status) {
+                case 'synced': syncIcon.classList.add('text-green-500'); break;
+                case 'error': syncIcon.classList.add('text-red-500'); break;
+                case 'connecting':
+                default: syncIcon.classList.add('text-yellow-500'); break;
+            }
+        }
 
         // --- Firestore Refs ---
         const getWageCollectionRef = () => collection(db, 'users', currentUserId, 'wages');
@@ -312,14 +333,9 @@
         // --- Settings & Config Logic ---
         async function loadDefaultValues() {
             if (!currentUserId) return;
-            const docRef = getDefaultValuesDocRef();
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists() && Object.keys(docSnap.data()).length > 0) {
-                defaultValues = docSnap.data();
-            } else {
-                defaultValues = FALLBACK_DEFAULT_VALUES;
-                await saveDefaultValues();
-            }
+            const docSnap = await getDoc(getDefaultValuesDocRef());
+            defaultValues = docSnap.exists() ? docSnap.data() : FALLBACK_DEFAULT_VALUES;
+            if (!docSnap.exists()) await saveDefaultValues();
             renderDefaultValuesDisplay();
         }
 
@@ -339,14 +355,9 @@
 
         async function loadTripConfigs() {
             if (!currentUserId) return;
-            const docRef = getTripConfigDocRef();
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists() && Object.keys(docSnap.data()).length > 0) {
-                tripConfigs = docSnap.data();
-            } else {
-                tripConfigs = DEFAULT_TRIP_CONFIGS;
-                await saveTripConfigs();
-            }
+            const docSnap = await getDoc(getTripConfigDocRef());
+            tripConfigs = docSnap.exists() ? docSnap.data() : DEFAULT_TRIP_CONFIGS;
+            if (!docSnap.exists()) await saveTripConfigs();
             renderTripCounters();
         }
 
@@ -361,9 +372,7 @@
             selectDate(new Date());
             attachEventListeners();
             fetchAllDataForCalendarMarkers();
-            if (Notification.permission === 'granted') {
-                scheduleNotificationCheck();
-            }
+            if (Notification.permission === 'granted') scheduleNotificationCheck();
         }
         
         // --- Calendar Logic ---
@@ -376,26 +385,22 @@
             monthYearEl.textContent = `${currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}`;
             const firstDayOfMonth = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-
             for (let i = 0; i < firstDayOfMonth; i++) calendarDaysEl.innerHTML += `<div></div>`;
-
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('div');
                 dayEl.textContent = day;
                 dayEl.classList.add('calendar-day');
                 const date = new Date(year, month, day);
                 const dateString = formatDate(date);
-                
                 if (allDataCache[dateString]) {
                     dayEl.classList.add('has-data');
                     const shiftIcon = document.createElement('span');
                     shiftIcon.classList.add('shift-icon');
-                    shiftIcon.innerHTML = allDataCache[dateString].shift === 'day' ? '☀️' : allDataCache[dateString].shift === 'night' ? '🌙' : '☀️🌙';
+                    shiftIcon.innerHTML = allDataCache[dateString].shift === 'day' ? '☀️' : '🌙';
                     dayEl.appendChild(shiftIcon);
                 }
                 if (dateString === formatDate(selectedDate)) dayEl.classList.add('selected');
                 if (dateString === formatDate(new Date())) dayEl.classList.add('today');
-
                 dayEl.addEventListener('click', () => selectDate(date));
                 calendarDaysEl.appendChild(dayEl);
             }
@@ -403,49 +408,39 @@
 
         async function selectDate(date) {
             selectedDate = date;
-            const dateString = formatDate(selectedDate);
             document.getElementById('selected-date-display').textContent = selectedDate.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            
             clearForm();
-            
             if (!currentUserId) return;
-
-            const docSnap = await getDoc(doc(getWageCollectionRef(), dateString));
-
+            const docSnap = await getDoc(doc(getWageCollectionRef(), formatDate(date)));
             if (docSnap.exists()) {
                 populateForm(docSnap.data());
                 document.getElementById('delete-btn').disabled = false;
             } else {
                 document.getElementById('delete-btn').disabled = true;
             }
-            
             renderCalendar();
-            listenToPayPeriod();
+            // Switch pay period view based on selected date
+            const dayOfMonth = date.getDate();
+            currentPeriodView = (dayOfMonth <= 15) ? 1 : 2;
+            listenToSpecificPayPeriod();
         }
         
         // --- Form & Trip Counter Logic ---
         const tripCountersContainer = document.getElementById('trip-counters-container');
         function renderTripCounters() {
             tripCountersContainer.innerHTML = '';
-            const sortedConfigs = Object.entries(tripConfigs).sort(([, a], [, b]) => a.order - b.order);
-
+            const sortedConfigs = Object.entries(tripConfigs).sort(([, a], [, b]) => (a.order || 99) - (b.order || 99));
             for (const [key, config] of sortedConfigs) {
                 const counterEl = document.createElement('div');
                 counterEl.className = 'bg-tertiary p-2 rounded-lg flex items-center justify-between border border-border-color';
                 counterEl.innerHTML = `
-                    <div class="flex-grow">
-                        <p class="font-semibold">${config.name}</p>
-                        <p class="text-xs text-secondary" id="trip-desc-${key}"></p>
-                    </div>
+                    <div class="flex-grow"><p class="font-semibold">${config.name}</p><p class="text-xs text-secondary" id="trip-desc-${key}"></p></div>
                     <div class="flex items-center gap-3">
                         <button data-key="${key}" data-action="minus" class="counter-btn bg-red-500 hover:bg-red-600 text-white transition">-</button>
                         <span id="trip-count-${key}" class="text-xl font-bold w-12 text-center">0</span>
                         <button data-key="${key}" data-action="plus" class="counter-btn bg-green-500 hover:bg-green-600 text-white transition">+</button>
                     </div>
-                    <div class="w-24 text-right">
-                        <span id="trip-amount-${key}" class="text-lg font-bold text-summary-blue">฿0</span>
-                    </div>
-                `;
+                    <div class="w-24 text-right"><span id="trip-amount-${key}" class="text-lg font-bold text-summary-blue">฿0</span></div>`;
                 tripCountersContainer.appendChild(counterEl);
             }
             updateAllTripDescriptions();
@@ -453,8 +448,10 @@
         function updateTripCounterUI(key) {
             const count = dailyTripCounts[key] || 0;
             const amount = calculateTripPay(key, count);
-            document.getElementById(`trip-count-${key}`).textContent = count;
-            document.getElementById(`trip-amount-${key}`).textContent = `฿${amount}`;
+            const countEl = document.getElementById(`trip-count-${key}`);
+            const amountEl = document.getElementById(`trip-amount-${key}`);
+            if(countEl) countEl.textContent = count;
+            if(amountEl) amountEl.textContent = `฿${amount}`;
         }
         function updateAllTripCountersUI() { Object.keys(tripConfigs).forEach(updateTripCounterUI); }
         function updateTripDescription(key) {
@@ -491,33 +488,31 @@
         }
         
         // --- Form Save/Clear/Populate Logic ---
-        const inputIds = [ 'shift-day', 'shift-night', 'ot-before', 'ot-after', 'special-food', 'night-allowance', 'diligence-bonus' ];
+        const inputIds = [ 'ot-before', 'ot-after', 'special-food', 'night-allowance', 'diligence-bonus' ];
         const inputs = inputIds.reduce((acc, id) => ({ ...acc, [id]: document.getElementById(id) }), {});
         function clearForm() {
-            inputIds.forEach(id => {
-                const el = inputs[id];
-                if (el.type === 'checkbox') el.checked = false; else el.value = '';
-            });
-            inputs['night-allowance'].value = '';
+            document.querySelectorAll('input[name="shift"]').forEach(radio => radio.checked = false);
+            inputIds.forEach(id => { if(inputs[id]) inputs[id].value = ''; });
             inputs['night-allowance'].readOnly = true;
             dailyTripCounts = {};
             updateAllTripCountersUI();
         }
         function populateForm(data) {
-            inputs['shift-day'].checked = data.shift === 'day' || data.shift === 'both';
-            inputs['shift-night'].checked = data.shift === 'night' || data.shift === 'both';
+            if (data.shift) {
+                const shiftRadio = document.getElementById(`shift-${data.shift}`);
+                if (shiftRadio) shiftRadio.checked = true;
+            }
             Object.keys(data.income).forEach(key => { if (inputs[key]) inputs[key].value = data.income[key]; });
             if (data.trips) { dailyTripCounts = data.trips; updateAllTripCountersUI(); }
         }
         async function handleSave() {
             if (!currentUserId || !selectedDate) return;
-            const dateString = formatDate(selectedDate);
-            let shift = inputs['shift-day'].checked && inputs['shift-night'].checked ? 'both' : inputs['shift-day'].checked ? 'day' : inputs['shift-night'].checked ? 'night' : 'none';
-            if (shift === 'none') { alert('กรุณาเลือกกะการทำงาน'); return; }
+            const selectedShift = document.querySelector('input[name="shift"]:checked');
+            if (!selectedShift) { alert('กรุณาเลือกกะการทำงาน'); return; }
 
             const dataToSave = {
-                date: dateString,
-                shift: shift,
+                date: formatDate(selectedDate),
+                shift: selectedShift.value,
                 income: {
                     base: defaultValues.base, travel: defaultValues.travel, food: defaultValues.food,
                     ot_before: Number(inputs['ot-before'].value) || 0,
@@ -531,28 +526,30 @@
             const saveBtn = document.getElementById('save-btn');
             saveBtn.textContent = 'กำลังบันทึก...'; saveBtn.disabled = true;
             try {
-                await setDoc(doc(getWageCollectionRef(), dateString), dataToSave);
-                allDataCache[dateString] = { shift: dataToSave.shift };
+                await setDoc(doc(getWageCollectionRef(), dataToSave.date), dataToSave);
+                allDataCache[dataToSave.date] = { shift: dataToSave.shift };
                 clearForm();
                 selectDate(selectedDate);
-            } catch (error) {
-                console.error("Error saving document: ", error);
-                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
-            } finally {
-                saveBtn.textContent = 'บันทึก'; saveBtn.disabled = false;
-            }
+            } catch (error) { console.error("Error saving document: ", error); alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+            } finally { saveBtn.textContent = 'บันทึก'; saveBtn.disabled = false; }
         }
         
         // --- Data Fetching and Summary ---
-        function listenToPayPeriod() {
+        function listenToSpecificPayPeriod() {
             unsubscribeFromWages();
             if (!currentUserId) return;
-            const { start, end, periodText } = getPayPeriod(selectedDate);
-            document.getElementById('pay-period-display').textContent = periodText;
+            const { start, end, monthText } = getPayPeriodDates(currentDate, currentPeriodView);
+            document.getElementById('pay-period-month-display').textContent = monthText;
+            document.getElementById('period-1-btn').classList.toggle('active', currentPeriodView === 1);
+            document.getElementById('period-2-btn').classList.toggle('active', currentPeriodView === 2);
+
             const q = query(getWageCollectionRef(), where("date", ">=", start), where("date", "<=", end));
             unsubscribeFromWages = onSnapshot(q, (snapshot) => {
                 const periodData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.id.localeCompare(b.id));
                 updateSummary(periodData);
+            }, (error) => {
+                console.error("Error fetching period data:", error);
+                updateSyncIcon('error');
             });
         }
         async function fetchAllDataForCalendarMarkers() {
@@ -568,21 +565,30 @@
             dailyTableBody.innerHTML = '';
             const summary = { total: 0, ot: 0, trips: 0, other: 0 };
             data.forEach(dayData => {
-                const incomeTotal = Object.values(dayData.income).reduce((s, v) => s + v, 0);
+                const income = dayData.income || {};
+                const baseTotal = (income.base || 0) + (income.travel || 0) + (income.food || 0);
+                const otTotal = (income.ot_before || 0) + (income.ot_after || 0);
+                const otherTotal = (income.special_food || 0) + (income.night_allowance || 0) + (income.diligence_bonus || 0);
                 let tripsTotal = 0;
                 if (dayData.trips) {
                     for (const key in dayData.trips) tripsTotal += calculateTripPay(key, dayData.trips[key]);
                 }
-                const dailyTotal = incomeTotal + tripsTotal;
+                const dailyTotal = baseTotal + otTotal + otherTotal + tripsTotal;
+                
                 summary.total += dailyTotal;
-                summary.ot += (dayData.income.ot_before || 0) + (dayData.income.ot_after || 0);
+                summary.ot += otTotal;
                 summary.trips += tripsTotal;
-                summary.other += (dayData.income.special_food || 0) + (dayData.income.night_allowance || 0) + (dayData.income.diligence_bonus || 0);
-                const tripsSummaryText = dayData.trips ? Object.entries(dayData.trips).filter(([, count]) => count > 0).map(([key, count]) => `${tripConfigs[key]?.name || key}:${count}`).join(', ') : '-';
+                summary.other += otherTotal;
+
                 const row = document.createElement('tr');
                 row.className = 'border-b border-border-color hover:bg-tertiary';
-                const shiftIcon = dayData.shift === 'day' ? '☀️' : dayData.shift === 'night' ? '🌙' : '☀️🌙';
-                row.innerHTML = `<td class="px-4 py-2">${new Date(dayData.id).toLocaleDateString('th-GB')}</td><td class="px-4 py-2">${shiftIcon}</td><td class="px-4 py-2 font-medium">${dailyTotal.toLocaleString()}</td><td class="px-4 py-2 text-secondary truncate max-w-xs">${tripsSummaryText}</td>`;
+                row.innerHTML = `
+                    <td class="px-2 py-2">${new Date(dayData.id).toLocaleDateString('th-GB').slice(0,5)}</td>
+                    <td class="px-2 py-2">${baseTotal}</td>
+                    <td class="px-2 py-2">${otTotal}</td>
+                    <td class="px-2 py-2">${tripsTotal}</td>
+                    <td class="px-2 py-2">${otherTotal}</td>
+                    <td class="px-2 py-2 font-bold">${dailyTotal}</td>`;
                 dailyTableBody.appendChild(row);
             });
             updateSummaryCards(summary);
@@ -604,66 +610,49 @@
             });
         }
         
-        // --- Modal Logic ---
+        // --- Modal & Notification Logic ---
         function setupModal(modalId, openBtnId, closeBtnIds) {
             const modal = document.getElementById(modalId);
             const openBtn = document.getElementById(openBtnId);
             openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-            closeBtnIds.forEach(id => {
-                document.getElementById(id).addEventListener('click', () => modal.classList.add('hidden'));
-            });
+            closeBtnIds.forEach(id => document.getElementById(id).addEventListener('click', () => modal.classList.add('hidden')));
         }
-        
-        // --- Notification Logic ---
         function scheduleNotificationCheck() {
             if (notificationInterval) clearInterval(notificationInterval);
             notificationInterval = setInterval(() => {
                 const now = new Date();
                 if (now.getHours() === 20) {
-                    const todayString = formatDate(now);
-                    if (!allDataCache[todayString]) {
-                        new Notification('บันทึกค่าจ้างรายวัน', {
-                            body: 'อย่าลืมบันทึกข้อมูลค่าจ้างของวันนี้!',
-                        });
-                    }
+                    if (!allDataCache[formatDate(now)]) new Notification('บันทึกค่าจ้างรายวัน', { body: 'อย่าลืมบันทึกข้อมูลค่าจ้างของวันนี้!' });
                 }
             }, 3600 * 1000); 
         }
-
         async function handleNotificationToggle() {
-            if (!('Notification' in window)) {
-                alert('เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน');
-                return;
-            }
-            if (Notification.permission === 'granted') {
-                alert('การแจ้งเตือนทำงานอยู่แล้ว');
-            } else if (Notification.permission !== 'denied') {
+            if (!('Notification' in window)) { alert('เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน'); return; }
+            if (Notification.permission === 'granted') { alert('การแจ้งเตือนทำงานอยู่แล้ว'); }
+            else if (Notification.permission !== 'denied') {
                 const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    new Notification('เปิดการแจ้งเตือนสำเร็จ!');
-                    scheduleNotificationCheck();
-                } else {
-                    alert('คุณไม่อนุญาตให้แสดงการแจ้งเตือน');
-                }
-            } else {
-                alert('คุณได้ปิดการแจ้งเตือนไว้ กรุณาไปที่การตั้งค่าของเบราว์เซอร์เพื่อเปิดใช้งาน');
-            }
+                if (permission === 'granted') { new Notification('เปิดการแจ้งเตือนสำเร็จ!'); scheduleNotificationCheck(); }
+                else { alert('คุณไม่อนุญาตให้แสดงการแจ้งเตือน'); }
+            } else { alert('คุณได้ปิดการแจ้งเตือนไว้ กรุณาไปที่การตั้งค่าของเบราว์เซอร์เพื่อเปิดใช้งาน'); }
         }
 
         // --- Event Listeners ---
         function attachEventListeners() {
-            document.getElementById('prev-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); });
-            document.getElementById('next-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); });
-            inputs['shift-night'].addEventListener('change', (e) => { inputs['night-allowance'].value = e.target.checked ? 100 : ''; });
+            document.getElementById('prev-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); listenToSpecificPayPeriod(); renderCalendar(); });
+            document.getElementById('next-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); listenToSpecificPayPeriod(); renderCalendar(); });
+            document.querySelector('input[value="night"]').addEventListener('change', (e) => { inputs['night-allowance'].value = e.target.checked ? 100 : ''; });
+            document.querySelector('input[value="day"]').addEventListener('change', (e) => { if(e.target.checked) inputs['night-allowance'].value = ''; });
             document.getElementById('save-btn').addEventListener('click', handleSave);
             
+            document.getElementById('period-1-btn').addEventListener('click', () => { currentPeriodView = 1; listenToSpecificPayPeriod(); });
+            document.getElementById('period-2-btn').addEventListener('click', () => { currentPeriodView = 2; listenToSpecificPayPeriod(); });
+
             setupModal('delete-modal', 'delete-btn', ['cancel-delete-btn']);
             document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
                 if (!currentUserId || !selectedDate) return;
                 await deleteDoc(doc(getWageCollectionRef(), formatDate(selectedDate)));
                 delete allDataCache[formatDate(selectedDate)];
-                clearForm();
-                selectDate(selectedDate);
+                clearForm(); selectDate(selectedDate);
                 document.getElementById('delete-modal').classList.add('hidden');
             });
             
@@ -685,16 +674,113 @@
 
             tripCountersContainer.addEventListener('click', handleTripCounterClick);
             document.getElementById('notification-toggle').addEventListener('click', handleNotificationToggle);
+            document.getElementById('export-excel').addEventListener('click', exportToExcel);
+            document.getElementById('export-pdf').addEventListener('click', exportToPDF);
+            document.getElementById('backup-data').addEventListener('click', backupData);
+            document.getElementById('import-data').addEventListener('change', importData);
         }
 
         // --- Utility & Export/Import ---
         const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        function getPayPeriod(date) {
-            const y = date.getFullYear(), m = date.getMonth(), d = date.getDate();
-            const mName = date.toLocaleDateString('th-TH', { month: 'long' });
-            if (d <= 15) return { start: formatDate(new Date(y, m, 1)), end: formatDate(new Date(y, m, 15)), periodText: `1 - 15 ${mName}` };
+        function getPayPeriodDates(date, period) {
+            const y = date.getFullYear(), m = date.getMonth();
+            const monthText = date.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+            if (period === 1) return { start: formatDate(new Date(y, m, 1)), end: formatDate(new Date(y, m, 15)), monthText };
             const lastDay = new Date(y, m + 1, 0).getDate();
-            return { start: formatDate(new Date(y, m, 16)), end: formatDate(new Date(y, m, lastDay)), periodText: `16 - ${lastDay} ${mName}` };
+            return { start: formatDate(new Date(y, m, 16)), end: formatDate(new Date(y, m, lastDay)), monthText };
+        }
+        async function getDataForExport() {
+            if (!currentUserId) return [];
+            const { start, end } = getPayPeriodDates(currentDate, currentPeriodView);
+            const q = query(getWageCollectionRef(), where("date", ">=", start), where("date", "<=", end));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.id.localeCompare(b.id));
+        }
+        async function exportToExcel() {
+            const data = await getDataForExport();
+            if (data.length === 0) { alert("ไม่มีข้อมูลในรอบบิลนี้สำหรับ Export"); return; }
+            const flattenedData = data.map(d => {
+                const income = d.income || {};
+                const trips = d.trips || {};
+                let tripsTotal = 0;
+                for (const key in trips) tripsTotal += calculateTripPay(key, trips[key]);
+                return {
+                    'วันที่': d.id, 'กะ': d.shift, 'ค่าจ้าง': income.base, 'ค่าเดินทาง': income.travel, 'ค่าอาหาร': income.food,
+                    'โอทีหน้า': income.ot_before, 'โอทีหลัง': income.ot_after, 'ค่าเที่ยว': tripsTotal,
+                    'อาหารพิเศษ': income.special_food, 'ค่ากะดึก': income.night_allowance, 'เบี้ยขยัน': income.diligence_bonus,
+                };
+            });
+            const worksheet = XLSX.utils.json_to_sheet(flattenedData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, `รอบบิลที่ ${currentPeriodView}`);
+            XLSX.writeFile(workbook, `สรุปค่าจ้าง_รอบ${currentPeriodView}_${currentDate.getMonth()+1}-${currentDate.getFullYear()}.xlsx`);
+        }
+        async function exportToPDF() {
+            alert("การสร้าง PDF อาจไม่แสดงภาษาไทยอย่างถูกต้องในบางโปรแกรม");
+            const { jsPDF } = window.jspdf;
+            const data = await getDataForExport();
+            if (data.length === 0) { alert("ไม่มีข้อมูลในรอบบิลนี้สำหรับ Export"); return; }
+            const doc = new jsPDF();
+            doc.setFont('helvetica');
+            const { monthText } = getPayPeriodDates(currentDate, currentPeriodView);
+            doc.text(`สรุปค่าจ้าง รอบที่ ${currentPeriodView} เดือน ${monthText}`, 14, 15);
+            const tableColumn = ["วันที่", "พื้นฐาน", "โอที", "เที่ยว", "อื่นๆ", "รวม"];
+            const tableRows = [];
+            let grandTotal = 0;
+            data.forEach(d => {
+                const income = d.income || {};
+                const baseTotal = (income.base || 0) + (income.travel || 0) + (income.food || 0);
+                const otTotal = (income.ot_before || 0) + (income.ot_after || 0);
+                const otherTotal = (income.special_food || 0) + (income.night_allowance || 0) + (income.diligence_bonus || 0);
+                let tripsTotal = 0;
+                if (d.trips) { for (const key in d.trips) tripsTotal += calculateTripPay(key, d.trips[key]); }
+                const dailyTotal = baseTotal + otTotal + otherTotal + tripsTotal;
+                grandTotal += dailyTotal;
+                tableRows.push([ d.id, baseTotal, otTotal, tripsTotal, otherTotal, dailyTotal ]);
+            });
+            doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
+            doc.text(`ยอดรวมสุทธิ: ${grandTotal.toLocaleString()} บาท`, 14, doc.lastAutoTable.finalY + 10);
+            doc.save(`สรุปค่าจ้าง_รอบ${currentPeriodView}_${currentDate.getMonth()+1}-${currentDate.getFullYear()}.pdf`);
+        }
+        async function backupData() {
+            if (!currentUserId) return;
+            const snapshot = await getDocs(query(getWageCollectionRef()));
+            let allData = { wages: {}, tripConfigs, defaultValues };
+            snapshot.forEach(doc => { allData.wages[doc.id] = doc.data(); });
+            const jsonString = JSON.stringify(allData, null, 2);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `wage_backup_${formatDate(new Date())}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        }
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (typeof data !== 'object' || data === null || !data.wages) throw new Error("Invalid JSON format");
+                    if (!confirm(`คุณกำลังจะนำเข้าข้อมูล ${Object.keys(data.wages).length} วัน และข้อมูลการตั้งค่าทั้งหมด ยืนยันหรือไม่?`)) return;
+
+                    const batch = writeBatch(db);
+                    Object.keys(data.wages).forEach(dateString => {
+                        batch.set(doc(getWageCollectionRef(), dateString), data.wages[dateString]);
+                    });
+                    await batch.commit();
+                    
+                    if (data.tripConfigs) { tripConfigs = data.tripConfigs; await saveTripConfigs(); }
+                    if (data.defaultValues) { defaultValues = data.defaultValues; await saveDefaultValues(); }
+                    
+                    alert("นำเข้าข้อมูลสำเร็จ!");
+                    await Promise.all([loadTripConfigs(), loadDefaultValues()]);
+                    await fetchAllDataForCalendarMarkers();
+                    selectDate(selectedDate);
+                } catch (error) { console.error("Import failed:", error); alert(`นำเข้าข้อมูลล้มเหลว: ${error.message}`);
+                } finally { event.target.value = ''; }
+            };
+            reader.readAsText(file);
         }
     </script>
 </body>
