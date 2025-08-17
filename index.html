@@ -190,17 +190,19 @@
             <div id="email-login-form" class="space-y-3">
                 <input type="email" id="email-input" placeholder="อีเมล" class="form-input">
                 <input type="password" id="password-input" placeholder="รหัสผ่าน (6 ตัวอักษรขึ้นไป)" class="form-input">
-                <button id="email-login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg">เข้าสู่ระบบ / สมัครด้วยอีเมล</button>
+                <button id="email-login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg disabled:bg-gray-400">เข้าสู่ระบบ / สมัครด้วยอีเมล</button>
             </div>
             
             <button id="close-login-modal" class="mt-6 w-full text-secondary hover:text-primary">ปิด</button>
         </div>
     </div>
+
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, onAuthStateChanged, signInAnonymously, EmailAuthProvider,
-            linkWithCredential, signOut
+            signInWithEmailAndPassword, linkWithCredential, signOut
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, onSnapshot, query, where, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -264,6 +266,8 @@
 
         // --- Authentication ---
         onAuthStateChanged(auth, async (user) => {
+            // If the user logs in with an existing account, this will fire again
+            // with the permanent user object, triggering a UI and data refresh.
             if (user) {
                 currentUserId = user.uid;
                 updateSyncIcon('synced');
@@ -273,6 +277,7 @@
             } else {
                 updateSyncIcon('connecting');
                 try {
+                    // Start with an anonymous user session
                     await signInAnonymously(auth);
                 } catch (error) {
                     console.error("Anonymous Authentication failed:", error);
@@ -311,29 +316,52 @@
         async function handleEmailLogin() {
             const email = document.getElementById('email-input').value;
             const password = document.getElementById('password-input').value;
+            const loginBtn = document.getElementById('email-login-btn');
+
             if (!email || password.length < 6) {
                 alert('กรุณากรอกอีเมลและรหัสผ่าน (อย่างน้อย 6 ตัวอักษร)');
                 return;
             }
             
+            // Provide user feedback that something is happening
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'กำลังดำเนินการ...';
+
             try {
-                const credential = EmailAuthProvider.credential(email, password);
-                await linkWithCredential(auth.currentUser, credential);
-                alert('สร้างและเชื่อมต่อบัญชีสำเร็จ!');
+                // First, try to sign in. This handles existing users.
+                await signInWithEmailAndPassword(auth, email, password);
+                // If successful, onAuthStateChanged will handle everything.
+                alert('เข้าสู่ระบบสำเร็จ!');
                 document.getElementById('login-modal').classList.add('hidden');
-            } catch (linkError) {
-                console.error("Email linking failed:", linkError);
-                if (linkError.code === 'auth/email-already-in-use') {
-                    alert('อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น');
-                } else if (linkError.code === 'auth/weak-password') {
-                     alert('รหัสผ่านไม่ปลอดภัย กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร');
+
+            } catch (error) {
+                if (error.code === 'auth/user-not-found') {
+                    // If user does not exist, this is a new registration.
+                    // Proceed with linking the anonymous account to the new email credential.
+                    try {
+                        const credential = EmailAuthProvider.credential(email, password);
+                        await linkWithCredential(auth.currentUser, credential);
+                        alert('สมัครสมาชิกและเชื่อมต่อบัญชีสำเร็จ!');
+                        document.getElementById('login-modal').classList.add('hidden');
+                    } catch (linkError) {
+                        console.error("Linking failed:", linkError);
+                        alert(`เกิดข้อผิดพลาดในการสมัครสมาชิก: ${linkError.message}`);
+                    }
+                } else if (error.code === 'auth/wrong-password') {
+                    alert('รหัสผ่านไม่ถูกต้อง กรุณาลองอีกครั้ง');
                 } else {
-                    alert(`ไม่สามารถเชื่อมต่อบัญชีได้: ${linkError.message}`);
+                    // For other errors (network, etc.)
+                    console.error("Authentication failed:", error);
+                    alert(`เกิดข้อผิดพลาดในการเข้าสู่ระบบ: ${error.message}`);
                 }
+            } finally {
+                // Re-enable the button in any case
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'เข้าสู่ระบบ / สมัครด้วยอีเมล';
             }
         }
         
-        // --- (Rest of the application logic remains the same) ---
+        // --- (Rest of the application logic is identical to the previous version) ---
         // Placeholder for all other functions like updateSyncIcon, data management, calendar, etc.
         function updateSyncIcon(status) { syncIcon.classList.remove('text-yellow-500', 'text-green-500', 'text-red-500'); switch(status) { case 'synced': syncIcon.classList.add('text-green-500'); break; case 'error': syncIcon.classList.add('text-red-500'); break; case 'connecting': default: syncIcon.classList.add('text-yellow-500'); break; } }
         const getWageCollectionRef = () => collection(db, 'users', currentUserId, 'wages');
@@ -378,6 +406,7 @@
         async function exportToPDF() { alert("การสร้าง PDF อาจไม่แสดงภาษาไทยอย่างถูกต้องในบางโปรแกรม"); const { jsPDF } = window.jspdf; const data = await getDataForExport(); if (data.length === 0) { alert("ไม่มีข้อมูลในรอบบิลนี้สำหรับ Export"); return; } const doc = new jsPDF({orientation: 'landscape'}); doc.setFont('helvetica'); const { monthText } = getPayPeriodDates(currentDate, currentPeriodView); doc.text(`สรุปค่าจ้าง รอบที่ ${currentPeriodView} เดือน ${monthText}`, 14, 15); const allHeaders = new Set(['วันที่']); data.forEach(d => { Object.keys(d.income || {}).forEach(key => {if(d.income[key]>0) allHeaders.add(CATEGORY_NAMES[key] || key)}); Object.keys(d.trips || {}).forEach(key => {if(d.trips[key]>0) allHeaders.add(tripConfigs[key]?.name || key)}); }); allHeaders.add('รวม'); const tableColumn = Array.from(allHeaders); const tableRows = []; let grandTotal = 0; data.forEach(d => { const rowData = {}; let dailyTotal = 0; Object.keys(d.income || {}).forEach(key => { const name = CATEGORY_NAMES[key]; if (name) { rowData[name] = d.income[key] || 0; dailyTotal += d.income[key] || 0; } }); if (d.trips) { for (const key in d.trips) { const tripAmount = calculateTripPay(key, d.trips[key]); const tripName = tripConfigs[key]?.name || key; rowData[tripName] = tripAmount; dailyTotal += tripAmount; } } grandTotal += dailyTotal; rowData['รวม'] = dailyTotal; const row = tableColumn.map(col => rowData[col] || (col === 'วันที่' ? d.id : '0')); tableRows.push(row); }); doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 }); doc.text(`ยอดรวมสุทธิ: ${grandTotal.toLocaleString()} บาท`, 14, doc.lastAutoTable.finalY + 10); doc.save(`สรุปค่าจ้าง_รอบ${currentPeriodView}_${currentDate.getMonth()+1}-${currentDate.getFullYear()}.pdf`); }
         async function backupData() { if (!currentUserId) return; const snapshot = await getDocs(query(getWageCollectionRef())); let allData = { wages: {}, tripConfigs, defaultValues }; snapshot.forEach(doc => { allData.wages[doc.id] = doc.data(); }); const jsonString = JSON.stringify(allData, null, 2); const blob = new Blob([jsonString], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `wage_backup_${formatDate(new Date())}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
         function importData(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = async (e) => { try { const data = JSON.parse(e.target.result); if (typeof data !== 'object' || data === null || !data.wages) throw new Error("Invalid JSON format"); if (!confirm(`คุณกำลังจะนำเข้าข้อมูล ${Object.keys(data.wages).length} วัน และข้อมูลการตั้งค่าทั้งหมด ยืนยันหรือไม่? ข้อมูลเก่าจะถูกเขียนทับ`)) return; const batch = writeBatch(db); Object.keys(data.wages).forEach(dateString => { batch.set(doc(getWageCollectionRef(), dateString), data.wages[dateString]); }); if (data.tripConfigs) { tripConfigs = data.tripConfigs; batch.set(getTripConfigDocRef(), tripConfigs); } if (data.defaultValues) { defaultValues = data.defaultValues; batch.set(getDefaultValuesDocRef(), defaultValues); } await batch.commit(); alert("นำเข้าข้อมูลสำเร็จ!"); await Promise.all([loadTripConfigs(), loadDefaultValues()]); await fetchAllDataForCalendarMarkers(); selectDate(selectedDate); } catch (error) { console.error("Import failed:", error); alert(`นำเข้าข้อมูลล้มเหลว: ${error.message}`); } finally { event.target.value = ''; } }; reader.readAsText(file); }
+
     </script>
 </body>
 </html>
