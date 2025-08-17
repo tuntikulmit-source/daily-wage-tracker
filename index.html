@@ -56,9 +56,8 @@
 
     <div id="app-container" class="max-w-7xl mx-auto">
         <header class="text-center mb-4 relative">
-            <div class="absolute top-0 left-0 flex items-center space-x-2">
+            <div class="absolute top-0 left-0">
                 <svg id="sync-icon" class="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M15.55 13.422a1.5 1.5 0 01.995 1.414 1.5 1.5 0 01-1.414 1.414H5.032a1.5 1.5 0 01-1.414-1.414 1.5 1.5 0 01.995-1.414l.112-.04a4.002 4.002 0 016.542-1.662 4.002 4.002 0 015.283 1.7zM10 3a5.5 5.5 0 00-5.5 5.5V9a.5.5 0 011 0v-.5A4.5 4.5 0 1110 13.5a.5.5 0 010 1A5.5 5.5 0 0010 3z" clip-rule="evenodd"></path></svg>
-                <span id="user-id-display" class="text-xs text-secondary truncate max-w-[150px]"></span>
             </div>
             <h1 class="text-2xl md:text-3xl font-bold">แอปบันทึกค่าจ้างรายวัน</h1>
             <div class="absolute top-0 right-0 flex items-center space-x-2">
@@ -75,6 +74,9 @@
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <!-- Left Column: Calendar and Input Form -->
             <div class="card p-4 rounded-lg shadow-lg flex flex-col space-y-4">
+                <div class="text-center mb-2">
+                    <span id="user-id-display" class="text-xs text-secondary truncate max-w-[200px] inline-block"></span>
+                </div>
                 <div id="calendar-container" class="bg-tertiary p-3 rounded-md border border-border-color">
                     <div class="flex justify-between items-center mb-2">
                         <button id="prev-month" class="px-3 py-1 bg-interactive rounded-md hover:opacity-80">&lt;</button>
@@ -144,7 +146,23 @@
                     </div>
                 </div>
                 <div id="summary-cards" class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center"></div>
-                <div class="flex-grow overflow-y-auto">
+                
+                <div class="border-t border-border-color pt-2">
+                     <h4 class="text-lg font-semibold mb-2">สรุปยอดตามประเภท</h4>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs uppercase bg-tertiary text-secondary">
+                                <tr>
+                                    <th class="px-2 py-2">ประเภท</th>
+                                    <th class="px-2 py-2 text-right">ยอดรวม</th>
+                                </tr>
+                            </thead>
+                            <tbody id="category-summary-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex-grow overflow-y-auto border-t border-border-color pt-2">
                     <h4 class="text-lg font-semibold mb-2">ตารางสรุปรายวัน</h4>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left">
@@ -272,7 +290,7 @@
         let currentUserId = null;
         let currentDate = new Date();
         let selectedDate = new Date();
-        let currentPeriodView = 1; // 1 for 1-15, 2 for 16-end
+        let currentPeriodView = 1;
         let unsubscribeFromWages = () => {};
         let allDataCache = {}; 
         let tripConfigs = {};
@@ -290,6 +308,11 @@
             TRU: { name: 'TRU', type: 'fixed', price: 140, order: 5 },
             DMET: { name: 'DMET', type: 'fixed', price: 140, order: 6 },
         };
+        const CATEGORY_NAMES = {
+            base: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร',
+            ot_before: 'โอทีหน้า', ot_after: 'โอทีหลัง',
+            special_food: 'อาหารพิเศษ', night_allowance: 'ค่ากะดึก', diligence_bonus: 'เบี้ยขยัน'
+        };
 
         // --- DOM Elements ---
         const syncIcon = document.getElementById('sync-icon');
@@ -300,7 +323,7 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUserId = user.uid;
-                userIdDisplay.textContent = user.uid;
+                userIdDisplay.textContent = `User ID: ${user.uid}`;
                 updateSyncIcon('synced');
                 await Promise.all([loadTripConfigs(), loadDefaultValues()]);
                 initializeAppState();
@@ -320,8 +343,7 @@
             switch(status) {
                 case 'synced': syncIcon.classList.add('text-green-500'); break;
                 case 'error': syncIcon.classList.add('text-red-500'); break;
-                case 'connecting':
-                default: syncIcon.classList.add('text-yellow-500'); break;
+                case 'connecting': default: syncIcon.classList.add('text-yellow-500'); break;
             }
         }
 
@@ -338,33 +360,25 @@
             if (!docSnap.exists()) await saveDefaultValues();
             renderDefaultValuesDisplay();
         }
-
         async function saveDefaultValues() {
             if (!currentUserId) return;
             await setDoc(getDefaultValuesDocRef(), defaultValues);
             renderDefaultValuesDisplay();
         }
-
         function renderDefaultValuesDisplay() {
             defaultValuesDisplay.innerHTML = `
                 <div class="bg-tertiary p-2 rounded-lg"><p class="text-xs text-secondary">ค่าจ้าง</p><p class="font-bold">${defaultValues.base}</p></div>
                 <div class="bg-tertiary p-2 rounded-lg"><p class="text-xs text-secondary">ค่าเดินทาง</p><p class="font-bold">${defaultValues.travel}</p></div>
-                <div class="bg-tertiary p-2 rounded-lg"><p class="text-xs text-secondary">ค่าอาหาร</p><p class="font-bold">${defaultValues.food}</p></div>
-            `;
+                <div class="bg-tertiary p-2 rounded-lg"><p class="text-xs text-secondary">ค่าอาหาร</p><p class="font-bold">${defaultValues.food}</p></div>`;
         }
-
         async function loadTripConfigs() {
             if (!currentUserId) return;
             const docSnap = await getDoc(getTripConfigDocRef());
-            tripConfigs = docSnap.exists() ? docSnap.data() : DEFAULT_TRIP_CONFIGS;
-            if (!docSnap.exists()) await saveTripConfigs();
+            tripConfigs = docSnap.exists() && Object.keys(docSnap.data()).length > 0 ? docSnap.data() : DEFAULT_TRIP_CONFIGS;
+            if (!docSnap.exists() || Object.keys(docSnap.data()).length === 0) await saveTripConfigs();
             renderTripCounters();
         }
-
-        async function saveTripConfigs() {
-            if (!currentUserId) return;
-            await setDoc(getTripConfigDocRef(), tripConfigs);
-        }
+        async function saveTripConfigs() { if (!currentUserId) return; await setDoc(getTripConfigDocRef(), tripConfigs); }
 
         // --- App Initialization ---
         function initializeAppState() {
@@ -380,22 +394,17 @@
         const monthYearEl = document.getElementById('month-year');
         function renderCalendar() {
             calendarDaysEl.innerHTML = '';
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
+            const year = currentDate.getFullYear(); const month = currentDate.getMonth();
             monthYearEl.textContent = `${currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}`;
             const firstDayOfMonth = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             for (let i = 0; i < firstDayOfMonth; i++) calendarDaysEl.innerHTML += `<div></div>`;
             for (let day = 1; day <= daysInMonth; day++) {
-                const dayEl = document.createElement('div');
-                dayEl.textContent = day;
-                dayEl.classList.add('calendar-day');
-                const date = new Date(year, month, day);
-                const dateString = formatDate(date);
+                const dayEl = document.createElement('div'); dayEl.textContent = day; dayEl.classList.add('calendar-day');
+                const date = new Date(year, month, day); const dateString = formatDate(date);
                 if (allDataCache[dateString]) {
                     dayEl.classList.add('has-data');
-                    const shiftIcon = document.createElement('span');
-                    shiftIcon.classList.add('shift-icon');
+                    const shiftIcon = document.createElement('span'); shiftIcon.classList.add('shift-icon');
                     shiftIcon.innerHTML = allDataCache[dateString].shift === 'day' ? '☀️' : '🌙';
                     dayEl.appendChild(shiftIcon);
                 }
@@ -405,7 +414,6 @@
                 calendarDaysEl.appendChild(dayEl);
             }
         }
-
         async function selectDate(date) {
             selectedDate = date;
             document.getElementById('selected-date-display').textContent = selectedDate.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -419,9 +427,7 @@
                 document.getElementById('delete-btn').disabled = true;
             }
             renderCalendar();
-            // Switch pay period view based on selected date
-            const dayOfMonth = date.getDate();
-            currentPeriodView = (dayOfMonth <= 15) ? 1 : 2;
+            currentPeriodView = (date.getDate() <= 15) ? 1 : 2;
             listenToSpecificPayPeriod();
         }
         
@@ -433,15 +439,34 @@
             for (const [key, config] of sortedConfigs) {
                 const counterEl = document.createElement('div');
                 counterEl.className = 'bg-tertiary p-2 rounded-lg flex items-center justify-between border border-border-color';
-                counterEl.innerHTML = `
-                    <div class="flex-grow"><p class="font-semibold">${config.name}</p><p class="text-xs text-secondary" id="trip-desc-${key}"></p></div>
-                    <div class="flex items-center gap-3">
-                        <button data-key="${key}" data-action="minus" class="counter-btn bg-red-500 hover:bg-red-600 text-white transition">-</button>
-                        <span id="trip-count-${key}" class="text-xl font-bold w-12 text-center">0</span>
-                        <button data-key="${key}" data-action="plus" class="counter-btn bg-green-500 hover:bg-green-600 text-white transition">+</button>
-                    </div>
-                    <div class="w-24 text-right"><span id="trip-amount-${key}" class="text-lg font-bold text-summary-blue">฿0</span></div>`;
+                if (key === 'SHT') {
+                    counterEl.innerHTML = `
+                        <div class="flex-grow"><p class="font-semibold">${config.name}</p><p class="text-xs text-secondary" id="trip-desc-${key}"></p></div>
+                        <div class="flex items-center gap-2">
+                            <button data-key="${key}" data-action="minus" class="counter-btn bg-red-500 hover:bg-red-600 text-white transition text-2xl w-8 h-8">-</button>
+                            <input type="number" step="0.5" id="trip-count-${key}" class="form-input w-20 text-center font-bold text-xl" value="0">
+                            <button data-key="${key}" data-action="plus" class="counter-btn bg-green-500 hover:bg-green-600 text-white transition text-2xl w-8 h-8">+</button>
+                        </div>
+                        <div class="w-24 text-right"><span id="trip-amount-${key}" class="text-lg font-bold text-summary-blue">฿0</span></div>`;
+                } else {
+                    counterEl.innerHTML = `
+                        <div class="flex-grow"><p class="font-semibold">${config.name}</p><p class="text-xs text-secondary" id="trip-desc-${key}"></p></div>
+                        <div class="flex items-center gap-3">
+                            <button data-key="${key}" data-action="minus" class="counter-btn bg-red-500 hover:bg-red-600 text-white transition">-</button>
+                            <span id="trip-count-${key}" class="text-xl font-bold w-12 text-center">0</span>
+                            <button data-key="${key}" data-action="plus" class="counter-btn bg-green-500 hover:bg-green-600 text-white transition">+</button>
+                        </div>
+                        <div class="w-24 text-right"><span id="trip-amount-${key}" class="text-lg font-bold text-summary-blue">฿0</span></div>`;
+                }
                 tripCountersContainer.appendChild(counterEl);
+            }
+            // Add event listener for the new SHT input
+            const shtInput = document.getElementById('trip-count-SHT');
+            if (shtInput) {
+                shtInput.addEventListener('input', (e) => {
+                    dailyTripCounts['SHT'] = Number(e.target.value) || 0;
+                    updateTripCounterUI('SHT');
+                });
             }
             updateAllTripDescriptions();
         }
@@ -450,8 +475,11 @@
             const amount = calculateTripPay(key, count);
             const countEl = document.getElementById(`trip-count-${key}`);
             const amountEl = document.getElementById(`trip-amount-${key}`);
-            if(countEl) countEl.textContent = count;
-            if(amountEl) amountEl.textContent = `฿${amount}`;
+            if (countEl) {
+                if (countEl.tagName === 'INPUT') countEl.value = count;
+                else countEl.textContent = count;
+            }
+            if (amountEl) amountEl.textContent = `฿${amount}`;
         }
         function updateAllTripCountersUI() { Object.keys(tripConfigs).forEach(updateTripCounterUI); }
         function updateTripDescription(key) {
@@ -509,16 +537,12 @@
             if (!currentUserId || !selectedDate) return;
             const selectedShift = document.querySelector('input[name="shift"]:checked');
             if (!selectedShift) { alert('กรุณาเลือกกะการทำงาน'); return; }
-
             const dataToSave = {
-                date: formatDate(selectedDate),
-                shift: selectedShift.value,
+                date: formatDate(selectedDate), shift: selectedShift.value,
                 income: {
                     base: defaultValues.base, travel: defaultValues.travel, food: defaultValues.food,
-                    ot_before: Number(inputs['ot-before'].value) || 0,
-                    ot_after: Number(inputs['ot-after'].value) || 0,
-                    special_food: Number(inputs['special-food'].value) || 0,
-                    night_allowance: Number(inputs['night-allowance'].value) || 0,
+                    ot_before: Number(inputs['ot-before'].value) || 0, ot_after: Number(inputs['ot-after'].value) || 0,
+                    special_food: Number(inputs['special-food'].value) || 0, night_allowance: Number(inputs['night-allowance'].value) || 0,
                     diligence_bonus: Number(inputs['diligence-bonus'].value) || 0,
                 },
                 trips: dailyTripCounts
@@ -528,8 +552,7 @@
             try {
                 await setDoc(doc(getWageCollectionRef(), dataToSave.date), dataToSave);
                 allDataCache[dataToSave.date] = { shift: dataToSave.shift };
-                clearForm();
-                selectDate(selectedDate);
+                clearForm(); selectDate(selectedDate);
             } catch (error) { console.error("Error saving document: ", error); alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
             } finally { saveBtn.textContent = 'บันทึก'; saveBtn.disabled = false; }
         }
@@ -542,15 +565,11 @@
             document.getElementById('pay-period-month-display').textContent = monthText;
             document.getElementById('period-1-btn').classList.toggle('active', currentPeriodView === 1);
             document.getElementById('period-2-btn').classList.toggle('active', currentPeriodView === 2);
-
             const q = query(getWageCollectionRef(), where("date", ">=", start), where("date", "<=", end));
             unsubscribeFromWages = onSnapshot(q, (snapshot) => {
                 const periodData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.id.localeCompare(b.id));
                 updateSummary(periodData);
-            }, (error) => {
-                console.error("Error fetching period data:", error);
-                updateSyncIcon('error');
-            });
+            }, (error) => { console.error("Error fetching period data:", error); updateSyncIcon('error'); });
         }
         async function fetchAllDataForCalendarMarkers() {
             if (!currentUserId) return;
@@ -562,8 +581,12 @@
         }
         function updateSummary(data) {
             const dailyTableBody = document.getElementById('daily-summary-table');
+            const categoryTableBody = document.getElementById('category-summary-table');
             dailyTableBody.innerHTML = '';
+            categoryTableBody.innerHTML = '';
             const summary = { total: 0, ot: 0, trips: 0, other: 0 };
+            const categoryTotals = {};
+
             data.forEach(dayData => {
                 const income = dayData.income || {};
                 const baseTotal = (income.base || 0) + (income.travel || 0) + (income.food || 0);
@@ -571,26 +594,40 @@
                 const otherTotal = (income.special_food || 0) + (income.night_allowance || 0) + (income.diligence_bonus || 0);
                 let tripsTotal = 0;
                 if (dayData.trips) {
-                    for (const key in dayData.trips) tripsTotal += calculateTripPay(key, dayData.trips[key]);
+                    for (const key in dayData.trips) {
+                        const tripAmount = calculateTripPay(key, dayData.trips[key]);
+                        tripsTotal += tripAmount;
+                        const tripName = tripConfigs[key]?.name || key;
+                        categoryTotals[tripName] = (categoryTotals[tripName] || 0) + tripAmount;
+                    }
                 }
                 const dailyTotal = baseTotal + otTotal + otherTotal + tripsTotal;
                 
-                summary.total += dailyTotal;
-                summary.ot += otTotal;
-                summary.trips += tripsTotal;
-                summary.other += otherTotal;
+                Object.keys(income).forEach(key => {
+                    const name = CATEGORY_NAMES[key];
+                    if (name) categoryTotals[name] = (categoryTotals[name] || 0) + income[key];
+                });
 
+                summary.total += dailyTotal; summary.ot += otTotal; summary.trips += tripsTotal; summary.other += otherTotal;
+                
+                const shiftIcon = dayData.shift === 'day' ? '☀️' : '🌙';
                 const row = document.createElement('tr');
                 row.className = 'border-b border-border-color hover:bg-tertiary';
                 row.innerHTML = `
-                    <td class="px-2 py-2">${new Date(dayData.id).toLocaleDateString('th-GB').slice(0,5)}</td>
-                    <td class="px-2 py-2">${baseTotal}</td>
-                    <td class="px-2 py-2">${otTotal}</td>
-                    <td class="px-2 py-2">${tripsTotal}</td>
-                    <td class="px-2 py-2">${otherTotal}</td>
+                    <td class="px-2 py-2">${new Date(dayData.id).toLocaleDateString('th-GB').slice(0,5)} ${shiftIcon}</td>
+                    <td class="px-2 py-2">${baseTotal}</td> <td class="px-2 py-2">${otTotal}</td>
+                    <td class="px-2 py-2">${tripsTotal}</td> <td class="px-2 py-2">${otherTotal}</td>
                     <td class="px-2 py-2 font-bold">${dailyTotal}</td>`;
                 dailyTableBody.appendChild(row);
             });
+            
+            Object.entries(categoryTotals).filter(([, amount]) => amount > 0).forEach(([name, amount]) => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-border-color';
+                row.innerHTML = `<td class="px-2 py-2">${name}</td><td class="px-2 py-2 text-right font-semibold">${amount.toLocaleString()}</td>`;
+                categoryTableBody.appendChild(row);
+            });
+
             updateSummaryCards(summary);
         }
         function updateSummaryCards(summary) {
@@ -700,8 +737,7 @@
             const data = await getDataForExport();
             if (data.length === 0) { alert("ไม่มีข้อมูลในรอบบิลนี้สำหรับ Export"); return; }
             const flattenedData = data.map(d => {
-                const income = d.income || {};
-                const trips = d.trips || {};
+                const income = d.income || {}; const trips = d.trips || {};
                 let tripsTotal = 0;
                 for (const key in trips) tripsTotal += calculateTripPay(key, trips[key]);
                 return {
@@ -720,13 +756,11 @@
             const { jsPDF } = window.jspdf;
             const data = await getDataForExport();
             if (data.length === 0) { alert("ไม่มีข้อมูลในรอบบิลนี้สำหรับ Export"); return; }
-            const doc = new jsPDF();
-            doc.setFont('helvetica');
+            const doc = new jsPDF(); doc.setFont('helvetica');
             const { monthText } = getPayPeriodDates(currentDate, currentPeriodView);
             doc.text(`สรุปค่าจ้าง รอบที่ ${currentPeriodView} เดือน ${monthText}`, 14, 15);
             const tableColumn = ["วันที่", "พื้นฐาน", "โอที", "เที่ยว", "อื่นๆ", "รวม"];
-            const tableRows = [];
-            let grandTotal = 0;
+            const tableRows = []; let grandTotal = 0;
             data.forEach(d => {
                 const income = d.income || {};
                 const baseTotal = (income.base || 0) + (income.travel || 0) + (income.food || 0);
@@ -763,16 +797,13 @@
                     const data = JSON.parse(e.target.result);
                     if (typeof data !== 'object' || data === null || !data.wages) throw new Error("Invalid JSON format");
                     if (!confirm(`คุณกำลังจะนำเข้าข้อมูล ${Object.keys(data.wages).length} วัน และข้อมูลการตั้งค่าทั้งหมด ยืนยันหรือไม่?`)) return;
-
                     const batch = writeBatch(db);
                     Object.keys(data.wages).forEach(dateString => {
                         batch.set(doc(getWageCollectionRef(), dateString), data.wages[dateString]);
                     });
                     await batch.commit();
-                    
                     if (data.tripConfigs) { tripConfigs = data.tripConfigs; await saveTripConfigs(); }
                     if (data.defaultValues) { defaultValues = data.defaultValues; await saveDefaultValues(); }
-                    
                     alert("นำเข้าข้อมูลสำเร็จ!");
                     await Promise.all([loadTripConfigs(), loadDefaultValues()]);
                     await fetchAllDataForCalendarMarkers();
