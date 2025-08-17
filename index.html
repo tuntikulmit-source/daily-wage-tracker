@@ -28,22 +28,36 @@
             font-family: 'Sarabun', sans-serif; background-color: var(--bg-primary);
             color: var(--text-primary); transition: background-color 0.3s, color 0.3s;
         }
-        /* ... styles from original file ... */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-        .calendar-day { position: relative; aspect-ratio: 1 / 1; display: flex; justify-content: center; align-items: center; cursor: pointer; border-radius: 50%; transition: background-color 0.2s; }
+        .calendar-day {
+            position: relative; aspect-ratio: 1 / 1; display: flex; justify-content: center;
+            align-items: center; cursor: pointer; border-radius: 50%; transition: background-color 0.2s;
+        }
         .calendar-day.has-data { background-color: var(--bg-interactive); font-weight: bold; }
         .calendar-day.selected { background-color: #3b82f6; color: white; }
         .calendar-day.today { border: 2px solid #3b82f6; }
         .shift-icon { position: absolute; top: 2px; right: 2px; width: 12px; height: 12px; }
-        .form-input { background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 0.375rem; padding: 0.5rem 0.75rem; width: 100%; }
+        .form-input {
+            background-color: var(--bg-tertiary); border: 1px solid var(--border-color);
+            color: var(--text-primary); border-radius: 0.375rem; padding: 0.5rem 0.75rem; width: 100%;
+        }
         .form-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); }
         .counter-btn { width: 2.5rem; height: 2.5rem; font-size: 1.5rem; line-height: 1; border-radius: 50%; }
         .card { background-color: var(--bg-secondary); border: 1px solid var(--border-color); }
         .text-summary-green { color: var(--color-green); } .text-summary-blue { color: var(--color-blue); }
         .text-summary-yellow { color: var(--color-yellow); } .text-summary-purple { color: var(--color-purple); }
         .pay-period-btn.active { background-color: var(--color-blue); color: white; }
-        .table-cell { padding: 0.5rem; white-space: nowrap; text-align: right; }
-        .table-cell:first-child { text-align: left; position: sticky; left: 0; background-color: var(--bg-secondary); }
+        .table-cell {
+            padding: 0.5rem;
+            white-space: nowrap;
+            text-align: right;
+        }
+        .table-cell:first-child {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background-color: var(--bg-secondary);
+        }
     </style>
 </head>
 <body class="p-2 md:p-4">
@@ -65,14 +79,14 @@
                     <svg id="theme-toggle-light-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-.707 10.607a1 1 0 011.414 0l.707-.707a1 1 0 111.414 1.414l-.707.707a1 1 0 01-1.414 0zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
                 </button>
             </div>
-            </header>
+        </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div class="card p-4 rounded-lg shadow-lg flex flex-col space-y-4">
                 <div class="text-center mb-2">
                     <div id="user-info-display" class="text-xs text-secondary truncate max-w-full inline-block">
                         </div>
-                    </div>
+                </div>
                 <div id="calendar-container" class="bg-tertiary p-3 rounded-md border border-border-color">
                     <div class="flex justify-between items-center mb-2">
                         <button id="prev-month" class="px-3 py-1 bg-interactive rounded-md hover:opacity-80">&lt;</button>
@@ -178,9 +192,56 @@
         </main>
     </div>
 
-    <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center hidden z-50 p-4">...</div>
-    <div id="trip-config-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center hidden z-50 p-4">...</div>
-    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center hidden z-50 p-4">...</div>
+    <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center hidden z-50 p-4">
+        <div class="card p-6 rounded-lg shadow-xl text-center w-full max-w-sm">
+            <h4 class="text-lg font-bold mb-4">ยืนยันการลบ</h4>
+            <p class="mb-6 text-secondary">คุณต้องการลบข้อมูลของวันที่ <span id="delete-modal-date" class="font-bold text-red-600"></span> ใช่หรือไม่?</p>
+            <div class="flex justify-center gap-4">
+                <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">ยืนยัน</button>
+                <button id="cancel-delete-btn" class="bg-interactive hover:opacity-80 font-bold py-2 px-6 rounded-lg">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="trip-config-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center hidden z-50 p-4">
+        <div class="card p-6 rounded-lg shadow-xl w-full max-w-md flex flex-col" style="max-height: 90vh;">
+            <h4 class="text-xl font-bold mb-4 text-center">จัดการประเภทงาน</h4>
+            <div id="trip-config-list" class="space-y-2 overflow-y-auto mb-4 pr-2"></div>
+            <div class="border-t border-border-color pt-4">
+                <h5 class="text-lg font-semibold mb-2">เพิ่มประเภทงานใหม่</h5>
+                <div class="grid grid-cols-3 gap-2">
+                    <input type="text" id="new-trip-name" placeholder="ชื่อ (เช่น OT)" class="form-input col-span-2">
+                    <input type="number" id="new-trip-price" placeholder="ราคา" class="form-input">
+                </div>
+                <button id="add-new-trip-btn" class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg">เพิ่ม</button>
+            </div>
+             <button id="close-trip-config-modal" class="mt-4 bg-interactive hover:opacity-80 font-bold py-2 px-6 rounded-lg self-center">ปิด</button>
+        </div>
+    </div>
+    
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center hidden z-50 p-4">
+        <div class="card p-6 rounded-lg shadow-xl w-full max-w-sm">
+            <h4 class="text-xl font-bold mb-4 text-center">ตั้งค่าเริ่มต้น</h4>
+            <div class="space-y-4">
+                <div>
+                    <label for="default-base" class="block text-sm font-medium text-secondary">ค่าจ้างพื้นฐาน</label>
+                    <input type="number" id="default-base" class="form-input mt-1">
+                </div>
+                 <div>
+                    <label for="default-travel" class="block text-sm font-medium text-secondary">ค่าเดินทาง</label>
+                    <input type="number" id="default-travel" class="form-input mt-1">
+                </div>
+                 <div>
+                    <label for="default-food" class="block text-sm font-medium text-secondary">ค่าอาหาร</label>
+                    <input type="number" id="default-food" class="form-input mt-1">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="cancel-settings-btn" class="bg-interactive hover:opacity-80 font-bold py-2 px-4 rounded-lg">ยกเลิก</button>
+                <button id="save-settings-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">บันทึก</button>
+            </div>
+        </div>
+    </div>
 
     <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center hidden z-50 p-4">
         <div class="card p-6 rounded-lg shadow-xl w-full max-w-sm">
@@ -211,27 +272,18 @@
             <button id="close-login-modal" class="mt-6 w-full text-secondary hover:text-primary">ปิด</button>
         </div>
     </div>
+
+
     <script type="module">
-        // START: Updated Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
-            getAuth, 
-            onAuthStateChanged, 
-            signInAnonymously, 
-            GoogleAuthProvider, 
-            FacebookAuthProvider,
-            EmailAuthProvider,
-            signInWithPopup,
-            linkWithCredential,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            signOut
+            getAuth, onAuthStateChanged, signInAnonymously, GoogleAuthProvider, FacebookAuthProvider,
+            EmailAuthProvider, signInWithPopup, linkWithCredential, createUserWithEmailAndPassword,
+            signInWithEmailAndPassword, signOut
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, onSnapshot, query, where, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // END: Updated Firebase Imports
 
         // --- Theme Toggle Logic ---
-        // ... (Same as original)
         const themeToggleBtn = document.getElementById('theme-toggle');
         const darkIcon = document.getElementById('theme-toggle-dark-icon');
         const lightIcon = document.getElementById('theme-toggle-light-icon');
@@ -268,11 +320,10 @@
 
         // --- Global State ---
         let currentUserId = null;
-        let unsubscribeFromWages = () => {};
-        // ... (rest of global state is the same)
         let currentDate = new Date();
         let selectedDate = new Date();
         let currentPeriodView = 1;
+        let unsubscribeFromWages = () => {};
         let allDataCache = {}; 
         let tripConfigs = {};
         let defaultValues = {};
@@ -280,41 +331,46 @@
         let notificationInterval = null;
 
         // --- Default Configs ---
-        // ... (Same as original)
         const FALLBACK_DEFAULT_VALUES = { base: 372, travel: 60, food: 50 };
-        const DEFAULT_TRIP_CONFIGS = { SHT: { name: 'SHT', type: 'step', price: 20, step: 0.5, order: 1 }, A1PL: { name: 'A1 P/L', type: 'tier', prices: [60, 80, 180], order: 2 }, GW: { name: 'G/W', type: 'fixed', price: 180, order: 3 }, KD: { name: 'KD', type: 'fixed', price: 180, order: 4 }, TRU: { name: 'TRU', type: 'fixed', price: 140, order: 5 }, DMET: { name: 'DMET', type: 'fixed', price: 140, order: 6 } };
-        const CATEGORY_NAMES = { base: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_before: 'โอทีหน้า', ot_after: 'โอทีหลัง', special_food: 'อาหารพิเศษ', night_allowance: 'ค่ากะดึก', diligence_bonus: 'เบี้ยขยัน' };
+        const DEFAULT_TRIP_CONFIGS = {
+            SHT: { name: 'SHT', type: 'step', price: 20, step: 0.5, order: 1 },
+            A1PL: { name: 'A1 P/L', type: 'tier', prices: [60, 80, 180], order: 2 },
+            GW: { name: 'G/W', type: 'fixed', price: 180, order: 3 },
+            KD: { name: 'KD', type: 'fixed', price: 180, order: 4 },
+            TRU: { name: 'TRU', type: 'fixed', price: 140, order: 5 },
+            DMET: { name: 'DMET', type: 'fixed', price: 140, order: 6 },
+        };
+        const CATEGORY_NAMES = {
+            base: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร',
+            ot_before: 'โอทีหน้า', ot_after: 'โอทีหลัง',
+            special_food: 'อาหารพิเศษ', night_allowance: 'ค่ากะดึก', diligence_bonus: 'เบี้ยขยัน'
+        };
 
         // --- DOM Elements ---
         const syncIcon = document.getElementById('sync-icon');
         const userInfoDisplay = document.getElementById('user-info-display');
         const userStatusContainer = document.getElementById('user-status');
+        const defaultValuesDisplay = document.getElementById('default-values-display');
 
-        // --- START: New Authentication Logic ---
-
-        // Listen for authentication state changes
+        // --- Authentication ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // User is signed in.
                 currentUserId = user.uid;
                 updateSyncIcon('synced');
                 updateUserUI(user);
                 await Promise.all([loadTripConfigs(), loadDefaultValues()]);
                 initializeAppState();
             } else {
-                // No user is signed in, so sign in anonymously.
                 updateSyncIcon('connecting');
                 try {
                     await signInAnonymously(auth);
                 } catch (error) {
                     console.error("Anonymous Authentication failed:", error);
                     updateSyncIcon('error');
-                    alert("ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่อีกครั้ง");
                 }
             }
         });
         
-        // Update UI based on user's login state
         function updateUserUI(user) {
             userStatusContainer.innerHTML = '';
             if (user.isAnonymous) {
@@ -335,31 +391,39 @@
                 logoutButton.id = 'logout-btn';
                 logoutButton.className = 'bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-lg text-sm';
                 logoutButton.textContent = 'ออกจากระบบ';
-                logoutButton.onclick = () => signOut(auth);
-
+                logoutButton.onclick = () => {
+                    if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
+                        signOut(auth);
+                    }
+                };
                 userStatusContainer.appendChild(userDisplayName);
                 userStatusContainer.appendChild(logoutButton);
             }
         }
 
-        // Generic function to handle linking anonymous account to a permanent one
         async function linkAccount(provider) {
+            const currentUser = auth.currentUser;
+            if (!currentUser || !currentUser.isAnonymous) {
+                alert("เกิดข้อผิดพลาด: ไม่พบผู้ใช้แบบไม่ระบุตัวตน");
+                return;
+            }
             try {
-                const credential = await signInWithPopup(auth, provider);
-                await linkWithCredential(auth.currentUser, credential.credential);
+                const result = await signInWithPopup(currentUser, provider);
+                // The onAuthStateChanged observer will handle the UI update automatically.
                 alert('เชื่อมต่อบัญชีสำเร็จ! ข้อมูลของคุณปลอดภัยแล้ว');
                 document.getElementById('login-modal').classList.add('hidden');
             } catch (error) {
                 console.error("Linking failed:", error);
                 if (error.code === 'auth/credential-already-in-use') {
                     alert('บัญชีนี้ถูกใช้งานแล้ว กรุณาเข้าสู่ระบบด้วยบัญชีอื่น หรือหากนี่คือบัญชีของคุณ ให้ทำการออกจากระบบก่อน แล้วจึงเข้าสู่ระบบใหม่อีกครั้ง');
+                } else if (error.code === 'auth/popup-closed-by-user') {
+                    // Do nothing, user just closed the window.
                 } else {
                     alert('เกิดข้อผิดพลาดในการเชื่อมต่อบัญชี');
                 }
             }
         }
-
-        // Login provider handlers
+        
         async function handleGoogleLogin() {
             const provider = new GoogleAuthProvider();
             await linkAccount(provider);
@@ -369,7 +433,7 @@
             const provider = new FacebookAuthProvider();
             await linkAccount(provider);
         }
-        
+
         async function handleEmailLogin() {
             const email = document.getElementById('email-input').value;
             const password = document.getElementById('password-input').value;
@@ -379,91 +443,437 @@
             }
             
             try {
-                // Try to sign in first
-                await signInWithEmailAndPassword(auth, email, password);
-                // This will fail for new users, which is expected. The catch block will handle signup.
-                // For existing users trying to link, this won't work directly. Best to link.
-                // The logic here is simplified: create account and link.
-                throw new Error("Go to signup");
-            } catch (signInError) {
-                if (signInError.code === 'auth/user-not-found' || signInError.message === "Go to signup") {
-                    // User doesn't exist, so create a new account and link it
-                    try {
-                        const credential = EmailAuthProvider.credential(email, password);
-                        await linkWithCredential(auth.currentUser, credential);
-                        alert('สร้างและเชื่อมต่อบัญชีสำเร็จ!');
-                        document.getElementById('login-modal').classList.add('hidden');
-                    } catch (linkError) {
-                        console.error('Email linking failed:', linkError);
-                        alert(`ไม่สามารถเชื่อมต่อบัญชีได้: ${linkError.message}`);
-                    }
-                } else if (signInError.code === 'auth/wrong-password') {
-                     alert('รหัสผ่านไม่ถูกต้อง');
+                const credential = EmailAuthProvider.credential(email, password);
+                await linkWithCredential(auth.currentUser, credential);
+                alert('สร้างและเชื่อมต่อบัญชีสำเร็จ!');
+                document.getElementById('login-modal').classList.add('hidden');
+            } catch (linkError) {
+                if (linkError.code === 'auth/email-already-in-use') {
+                    alert('อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น');
+                } else if (linkError.code === 'auth/weak-password') {
+                     alert('รหัสผ่านไม่ปลอดภัย กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร');
                 } else {
-                    console.error('Email sign-in error:', signInError);
-                    alert('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+                    console.error('Email linking failed:', linkError);
+                    alert(`ไม่สามารถเชื่อมต่อบัญชีได้: ${linkError.message}`);
                 }
             }
         }
-
-        // --- END: New Authentication Logic ---
         
         function updateSyncIcon(status) {
-            // ... (Same as original)
+            syncIcon.classList.remove('text-yellow-500', 'text-green-500', 'text-red-500');
+            switch(status) {
+                case 'synced': syncIcon.classList.add('text-green-500'); break;
+                case 'error': syncIcon.classList.add('text-red-500'); break;
+                case 'connecting': default: syncIcon.classList.add('text-yellow-500'); break;
+            }
         }
 
         // --- Firestore Refs ---
-        // ... (Same as original)
-        
+        const getWageCollectionRef = () => collection(db, 'users', currentUserId, 'wages');
+        const getTripConfigDocRef = () => doc(db, 'users', currentUserId, 'settings', 'tripConfig');
+        const getDefaultValuesDocRef = () => doc(db, 'users', currentUserId, 'settings', 'defaultValues');
+
         // --- Settings & Config Logic ---
-        // ... (All functions are the same as original: loadDefaultValues, saveDefaultValues, renderDefaultValuesDisplay, loadTripConfigs, saveTripConfigs)
-        
+        async function loadDefaultValues() {
+            if (!currentUserId) return;
+            const docSnap = await getDoc(getDefaultValuesDocRef());
+            defaultValues = docSnap.exists() ? docSnap.data() : FALLBACK_DEFAULT_VALUES;
+            if (!docSnap.exists()) await saveDefaultValues();
+            renderDefaultValuesDisplay();
+        }
+        async function saveDefaultValues() { if (!currentUserId) return; await setDoc(getDefaultValuesDocRef(), defaultValues); renderDefaultValuesDisplay(); }
+        function renderDefaultValuesDisplay() {
+            defaultValuesDisplay.innerHTML = `
+                <div class="bg-tertiary p-2 rounded-lg"><p class="text-xs text-secondary">ค่าจ้าง</p><p class="font-bold">${defaultValues.base}</p></div>
+                <div class="bg-tertiary p-2 rounded-lg"><p class="text-xs text-secondary">ค่าเดินทาง</p><p class="font-bold">${defaultValues.travel}</p></div>
+                <div class="bg-tertiary p-2 rounded-lg"><p class="text-xs text-secondary">ค่าอาหาร</p><p class="font-bold">${defaultValues.food}</p></div>`;
+        }
+        async function loadTripConfigs() {
+            if (!currentUserId) return;
+            const docSnap = await getDoc(getTripConfigDocRef());
+            tripConfigs = docSnap.exists() && Object.keys(docSnap.data()).length > 0 ? docSnap.data() : DEFAULT_TRIP_CONFIGS;
+            if (!docSnap.exists() || Object.keys(docSnap.data()).length === 0) await saveTripConfigs();
+            renderTripCounters();
+        }
+        async function saveTripConfigs() { if (!currentUserId) return; await setDoc(getTripConfigDocRef(), tripConfigs); }
+
         // --- App Initialization ---
         function initializeAppState() {
-            // ... (Same as original)
+            renderCalendar();
+            selectDate(new Date());
+            attachEventListenersOnce(); // Use a new function to avoid re-attaching
+            fetchAllDataForCalendarMarkers();
+            if (Notification.permission === 'granted') scheduleNotificationCheck();
         }
         
         // --- Calendar Logic ---
-        // ... (All functions are the same as original: renderCalendar, selectDate)
+        const calendarDaysEl = document.getElementById('calendar-days');
+        const monthYearEl = document.getElementById('month-year');
+        function renderCalendar() {
+            calendarDaysEl.innerHTML = '';
+            const year = currentDate.getFullYear(); const month = currentDate.getMonth();
+            monthYearEl.textContent = `${currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}`;
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            for (let i = 0; i < firstDayOfMonth; i++) calendarDaysEl.innerHTML += `<div></div>`;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayEl = document.createElement('div'); dayEl.textContent = day; dayEl.classList.add('calendar-day');
+                const date = new Date(year, month, day); const dateString = formatDate(date);
+                if (allDataCache[dateString]) {
+                    dayEl.classList.add('has-data');
+                    const shiftIcon = document.createElement('span'); shiftIcon.classList.add('shift-icon');
+                    shiftIcon.innerHTML = allDataCache[dateString].shift === 'day' ? '☀️' : '🌙';
+                    dayEl.appendChild(shiftIcon);
+                }
+                if (dateString === formatDate(selectedDate)) dayEl.classList.add('selected');
+                if (dateString === formatDate(new Date())) dayEl.classList.add('today');
+                dayEl.addEventListener('click', () => selectDate(date));
+                calendarDaysEl.appendChild(dayEl);
+            }
+        }
+        async function selectDate(date) {
+            selectedDate = date;
+            document.getElementById('selected-date-display').textContent = selectedDate.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            clearForm();
+            if (!currentUserId) return;
+            const docSnap = await getDoc(doc(getWageCollectionRef(), formatDate(date)));
+            if (docSnap.exists()) {
+                populateForm(docSnap.data());
+                document.getElementById('delete-btn').disabled = false;
+            } else {
+                document.getElementById('delete-btn').disabled = true;
+            }
+            renderCalendar();
+            const newPeriodView = (date.getDate() <= 15) ? 1 : 2;
+            if (newPeriodView !== currentPeriodView) {
+                currentPeriodView = newPeriodView;
+                listenToSpecificPayPeriod();
+            } else if (!unsubscribeFromWages || unsubscribeFromWages.length === 0) {
+                 listenToSpecificPayPeriod();
+            }
+        }
         
         // --- Form & Trip Counter Logic ---
-        // ... (All functions are the same as original)
-
+        const tripCountersContainer = document.getElementById('trip-counters-container');
+        function renderTripCounters() {
+            tripCountersContainer.innerHTML = '';
+            const sortedConfigs = Object.entries(tripConfigs).sort(([, a], [, b]) => (a.order || 99) - (b.order || 99));
+            for (const [key, config] of sortedConfigs) {
+                const counterEl = document.createElement('div');
+                counterEl.className = 'bg-tertiary p-2 rounded-lg flex items-center justify-between border border-border-color';
+                if (key === 'SHT') {
+                    counterEl.innerHTML = `
+                        <div class="flex-grow"><p class="font-semibold">${config.name}</p><p class="text-xs text-secondary" id="trip-desc-${key}"></p></div>
+                        <div class="flex items-center gap-2">
+                            <button data-key="${key}" data-action="minus" class="counter-btn bg-red-500 hover:bg-red-600 text-white transition text-2xl w-8 h-8">-</button>
+                            <input type="number" step="0.5" id="trip-count-${key}" class="form-input w-20 text-center font-bold text-xl" value="0">
+                            <button data-key="${key}" data-action="plus" class="counter-btn bg-green-500 hover:bg-green-600 text-white transition text-2xl w-8 h-8">+</button>
+                        </div>
+                        <div class="w-24 text-right"><span id="trip-amount-${key}" class="text-lg font-bold text-summary-blue">฿0</span></div>`;
+                } else {
+                    counterEl.innerHTML = `
+                        <div class="flex-grow"><p class="font-semibold">${config.name}</p><p class="text-xs text-secondary" id="trip-desc-${key}"></p></div>
+                        <div class="flex items-center gap-3">
+                            <button data-key="${key}" data-action="minus" class="counter-btn bg-red-500 hover:bg-red-600 text-white transition">-</button>
+                            <span id="trip-count-${key}" class="text-xl font-bold w-12 text-center">0</span>
+                            <button data-key="${key}" data-action="plus" class="counter-btn bg-green-500 hover:bg-green-600 text-white transition">+</button>
+                        </div>
+                        <div class="w-24 text-right"><span id="trip-amount-${key}" class="text-lg font-bold text-summary-blue">฿0</span></div>`;
+                }
+                tripCountersContainer.appendChild(counterEl);
+            }
+            const shtInput = document.getElementById('trip-count-SHT');
+            if (shtInput) {
+                shtInput.addEventListener('input', (e) => {
+                    dailyTripCounts['SHT'] = Number(e.target.value) || 0;
+                    updateTripCounterUI('SHT');
+                });
+            }
+            updateAllTripDescriptions();
+        }
+        function updateTripCounterUI(key) {
+            const count = dailyTripCounts[key] || 0;
+            const amount = calculateTripPay(key, count);
+            const countEl = document.getElementById(`trip-count-${key}`);
+            const amountEl = document.getElementById(`trip-amount-${key}`);
+            if (countEl) {
+                if (countEl.tagName === 'INPUT') countEl.value = count;
+                else countEl.textContent = count;
+            }
+            if (amountEl) amountEl.textContent = `฿${amount}`;
+        }
+        function updateAllTripCountersUI() { Object.keys(tripConfigs).forEach(updateTripCounterUI); }
+        function updateTripDescription(key) {
+            const config = tripConfigs[key];
+            const descEl = document.getElementById(`trip-desc-${key}`);
+            if (!descEl) return;
+            if (config.type === 'fixed' || config.type === 'step') descEl.textContent = `เที่ยวละ ${config.price} บาท`;
+            else if (config.type === 'tier') descEl.textContent = `ราคาขั้นบันได: ${config.prices.join('/')} บาท`;
+        }
+        function updateAllTripDescriptions() { Object.keys(tripConfigs).forEach(updateTripDescription); }
+        function handleTripCounterClick(e) {
+            const button = e.target.closest('button[data-key]');
+            if (!button) return;
+            const { key, action } = button.dataset;
+            const config = tripConfigs[key];
+            let currentCount = dailyTripCounts[key] || 0;
+            const step = config.step || 1;
+            if (action === 'plus') currentCount += step;
+            else if (action === 'minus') currentCount = Math.max(0, currentCount - step);
+            dailyTripCounts[key] = currentCount;
+            updateTripCounterUI(key);
+        }
+        function calculateTripPay(key, count) {
+            const config = tripConfigs[key];
+            if (!config || count === 0) return 0;
+            switch (config.type) {
+                case 'fixed': case 'step': return count * config.price;
+                case 'tier':
+                    let total = 0;
+                    for (let i = 0; i < count; i++) total += config.prices[i] || config.prices[config.prices.length - 1];
+                    return total;
+                default: return 0;
+            }
+        }
+        
         // --- Form Save/Clear/Populate Logic ---
-        // ... (All functions are the same as original)
-
+        const inputIds = [ 'ot-before', 'ot-after', 'special-food', 'night-allowance', 'diligence-bonus' ];
+        const inputs = inputIds.reduce((acc, id) => ({ ...acc, [id]: document.getElementById(id) }), {});
+        function clearForm() {
+            document.querySelectorAll('input[name="shift"]').forEach(radio => radio.checked = false);
+            inputIds.forEach(id => { if(inputs[id]) inputs[id].value = ''; });
+            inputs['night-allowance'].readOnly = true;
+            dailyTripCounts = {};
+            updateAllTripCountersUI();
+        }
+        function populateForm(data) {
+            if (data.shift) {
+                const shiftRadio = document.getElementById(`shift-${data.shift}`);
+                if (shiftRadio) shiftRadio.checked = true;
+            }
+            Object.keys(data.income).forEach(key => { if (inputs[key]) inputs[key].value = data.income[key]; });
+            if (data.trips) { dailyTripCounts = { ...data.trips }; updateAllTripCountersUI(); }
+        }
+        async function handleSave() {
+            if (!currentUserId || !selectedDate) return;
+            const selectedShift = document.querySelector('input[name="shift"]:checked');
+            if (!selectedShift) { alert('กรุณาเลือกกะการทำงาน'); return; }
+            const dataToSave = {
+                date: formatDate(selectedDate), shift: selectedShift.value,
+                income: {
+                    base: defaultValues.base, travel: defaultValues.travel, food: defaultValues.food,
+                    ot_before: Number(inputs['ot-before'].value) || 0, ot_after: Number(inputs['ot-after'].value) || 0,
+                    special_food: Number(inputs['special-food'].value) || 0, night_allowance: Number(inputs['night-allowance'].value) || 0,
+                    diligence_bonus: Number(inputs['diligence-bonus'].value) || 0,
+                },
+                trips: dailyTripCounts
+            };
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.textContent = 'กำลังบันทึก...'; saveBtn.disabled = true;
+            try {
+                await setDoc(doc(getWageCollectionRef(), dataToSave.date), dataToSave);
+                allDataCache[dataToSave.date] = { shift: dataToSave.shift };
+                selectDate(selectedDate); // Re-select to refresh and show saved data
+            } catch (error) { console.error("Error saving document: ", error); alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+            } finally { saveBtn.textContent = 'บันทึก'; saveBtn.disabled = false; }
+        }
+        
         // --- Data Fetching and Summary ---
-        // ... (All functions are the same as original)
+        function listenToSpecificPayPeriod() {
+            if (typeof unsubscribeFromWages === 'function') {
+                unsubscribeFromWages();
+            }
+            if (!currentUserId) return;
+            const { start, end, monthText } = getPayPeriodDates(currentDate, currentPeriodView);
+            document.getElementById('pay-period-month-display').textContent = monthText;
+            document.getElementById('period-1-btn').classList.toggle('active', currentPeriodView === 1);
+            document.getElementById('period-2-btn').classList.toggle('active', currentPeriodView === 2);
+            const q = query(getWageCollectionRef(), where("date", ">=", start), where("date", "<=", end));
+            unsubscribeFromWages = onSnapshot(q, (snapshot) => {
+                const periodData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.id.localeCompare(b.id));
+                updateSummary(periodData);
+            }, (error) => { console.error("Error fetching period data:", error); updateSyncIcon('error'); });
+        }
+        async function fetchAllDataForCalendarMarkers() {
+            if (!currentUserId) return;
+            onSnapshot(query(getWageCollectionRef()), (snapshot) => {
+                allDataCache = {};
+                snapshot.forEach((doc) => { allDataCache[doc.id] = { shift: doc.data().shift }; });
+                renderCalendar();
+            });
+        }
+        function updateSummary(data) {
+            const dailyTableHead = document.getElementById('daily-summary-head');
+            const dailyTableBody = document.getElementById('daily-summary-body');
+            const categoryTableBody = document.getElementById('category-summary-table');
+            dailyTableHead.innerHTML = ''; dailyTableBody.innerHTML = ''; categoryTableBody.innerHTML = '';
+            
+            const summary = { total: 0, ot: 0, trips: 0, other: 0 };
+            const categoryTotals = {};
+            const allHeaders = new Set(['วันที่']);
+
+            data.forEach(dayData => {
+                Object.keys(dayData.income || {}).forEach(key => { if(dayData.income[key]>0) allHeaders.add(CATEGORY_NAMES[key] || key)});
+                Object.keys(dayData.trips || {}).forEach(key => { if(dayData.trips[key]>0) allHeaders.add(tripConfigs[key]?.name || key)});
+            });
+            allHeaders.add('รวม');
+            const headerOrder = ['วันที่', ...Object.values(CATEGORY_NAMES), ...Object.values(tripConfigs).map(c=>c.name), 'รวม'].filter(h => allHeaders.has(h));
+
+
+            const headerRow = document.createElement('tr');
+            headerRow.className = "text-xs uppercase bg-tertiary text-secondary sticky top-0";
+            headerOrder.forEach(headerText => {
+                const th = document.createElement('th');
+                th.className = 'table-cell';
+                th.textContent = headerText;
+                headerRow.appendChild(th);
+            });
+            dailyTableHead.appendChild(headerRow);
+
+            data.forEach(dayData => {
+                const rowData = {};
+                let dailyTotal = 0;
+                const income = dayData.income || {};
+                
+                Object.keys(income).forEach(key => {
+                    const name = CATEGORY_NAMES[key];
+                    if (name && income[key] > 0) {
+                        rowData[name] = income[key];
+                        categoryTotals[name] = (categoryTotals[name] || 0) + income[key];
+                        dailyTotal += income[key];
+                    }
+                });
+
+                let tripsTotal = 0;
+                if (dayData.trips) {
+                    for (const key in dayData.trips) {
+                        if (dayData.trips[key] > 0) {
+                            const tripAmount = calculateTripPay(key, dayData.trips[key]);
+                            const tripName = tripConfigs[key]?.name || key;
+                            rowData[tripName] = tripAmount;
+                            categoryTotals[tripName] = (categoryTotals[tripName] || 0) + tripAmount;
+                            tripsTotal += tripAmount;
+                        }
+                    }
+                }
+                dailyTotal += tripsTotal;
+                rowData['รวม'] = dailyTotal;
+
+                summary.total += dailyTotal;
+                summary.ot += (income.ot_before || 0) + (income.ot_after || 0);
+                summary.trips += tripsTotal;
+                summary.other += (income.special_food || 0) + (income.night_allowance || 0) + (income.diligence_bonus || 0);
+                
+                const shiftIcon = dayData.shift === 'day' ? '☀️' : '🌙';
+                const row = document.createElement('tr');
+                row.className = 'border-b border-border-color hover:bg-tertiary';
+
+                headerOrder.forEach(headerText => {
+                    const td = document.createElement('td');
+                    td.className = 'table-cell';
+                    if (headerText === 'วันที่') {
+                        td.innerHTML = `${new Date(dayData.id).toLocaleDateString('th-GB').slice(0,5)} ${shiftIcon}`;
+                    } else {
+                        td.textContent = rowData[headerText] || '0';
+                    }
+                    if (headerText === 'รวม') td.classList.add('font-bold');
+                    row.appendChild(td);
+                });
+                dailyTableBody.appendChild(row);
+            });
+            
+            Object.entries(categoryTotals).filter(([, amount]) => amount > 0).sort((a,b) => b[1] - a[1]).forEach(([name, amount]) => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-border-color';
+                row.innerHTML = `<td class="px-2 py-2">${name}</td><td class="px-2 py-2 text-right font-semibold">${amount.toLocaleString()}</td>`;
+                categoryTableBody.appendChild(row);
+            });
+            updateSummaryCards(summary);
+        }
+        function updateSummaryCards(summary) {
+            const container = document.getElementById('summary-cards');
+            container.innerHTML = `
+                <div class="bg-tertiary p-2 rounded-lg border border-border-color"><p class="text-xs text-secondary">รายรับรวม</p><p class="text-lg font-bold text-summary-green">${summary.total.toLocaleString()}</p></div>
+                <div class="bg-tertiary p-2 rounded-lg border border-border-color"><p class="text-xs text-secondary">ค่าเที่ยววิ่ง</p><p class="text-lg font-bold text-summary-blue">${summary.trips.toLocaleString()}</p></div>
+                <div class="bg-tertiary p-2 rounded-lg border border-border-color"><p class="text-xs text-secondary">โอที</p><p class="text-lg font-bold text-summary-yellow">${summary.ot.toLocaleString()}</p></div>
+                <div class="bg-tertiary p-2 rounded-lg border border-border-color"><p class="text-xs text-secondary">อื่นๆ</p><p class="text-lg font-bold text-summary-purple">${summary.other.toLocaleString()}</p></div>
+            `;
+        }
         
         // --- Modal & Notification Logic ---
-        // ... (Same as original, but we'll add listeners for the new modal)
+        function setupModal(modalId, openBtnId, closeBtnIds) {
+            const modal = document.getElementById(modalId);
+            const openBtn = document.getElementById(openBtnId);
+            if(openBtn) openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+            closeBtnIds.forEach(id => {
+                const closeBtn = document.getElementById(id);
+                if(closeBtn) closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+            });
+        }
+        function scheduleNotificationCheck() {
+            if (notificationInterval) clearInterval(notificationInterval);
+            notificationInterval = setInterval(() => {
+                const now = new Date();
+                if (now.getHours() === 20) {
+                    if (!allDataCache[formatDate(now)]) new Notification('บันทึกค่าจ้างรายวัน', { body: 'อย่าลืมบันทึกข้อมูลค่าจ้างของวันนี้!' });
+                }
+            }, 3600 * 1000); 
+        }
+        async function handleNotificationToggle() {
+            if (!('Notification' in window)) { alert('เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน'); return; }
+            if (Notification.permission === 'granted') { alert('การแจ้งเตือนทำงานอยู่แล้ว'); }
+            else if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') { new Notification('เปิดการแจ้งเตือนสำเร็จ!'); scheduleNotificationCheck(); }
+                else { alert('คุณไม่อนุญาตให้แสดงการแจ้งเตือน'); }
+            } else { alert('คุณได้ปิดการแจ้งเตือนไว้ กรุณาไปที่การตั้งค่าของเบราว์เซอร์เพื่อเปิดใช้งาน'); }
+        }
 
         // --- Event Listeners ---
-        function attachEventListeners() {
-            // ... (All original event listeners)
+        let listenersAttached = false;
+        function attachEventListenersOnce() {
+            if (listenersAttached) return;
+            
             document.getElementById('prev-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); listenToSpecificPayPeriod(); renderCalendar(); });
             document.getElementById('next-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); listenToSpecificPayPeriod(); renderCalendar(); });
             document.querySelector('input[value="night"]').addEventListener('change', (e) => { inputs['night-allowance'].value = e.target.checked ? 100 : ''; });
             document.querySelector('input[value="day"]').addEventListener('change', (e) => { if(e.target.checked) inputs['night-allowance'].value = ''; });
             document.getElementById('save-btn').addEventListener('click', handleSave);
+            
             document.getElementById('period-1-btn').addEventListener('click', () => { currentPeriodView = 1; listenToSpecificPayPeriod(); });
             document.getElementById('period-2-btn').addEventListener('click', () => { currentPeriodView = 2; listenToSpecificPayPeriod(); });
 
-            // ... (All original modal setups)
             setupModal('delete-modal', 'delete-btn', ['cancel-delete-btn']);
-            document.getElementById('confirm-delete-btn').addEventListener('click', async () => { /* ... */ });
-            setupModal('trip-config-modal', 'manage-trips-btn', ['close-trip-config-modal']);
-            setupModal('settings-modal', 'settings-btn', ['cancel-settings-btn']);
-            document.getElementById('save-settings-btn').addEventListener('click', async () => { /* ... */ });
+            document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+                if (!currentUserId || !selectedDate) return;
+                await deleteDoc(doc(getWageCollectionRef(), formatDate(selectedDate)));
+                delete allDataCache[formatDate(selectedDate)];
+                selectDate(selectedDate); // Re-select to refresh
+                document.getElementById('delete-modal').classList.add('hidden');
+            });
             
-            // START: New Event Listeners for Login
+            setupModal('trip-config-modal', 'manage-trips-btn', ['close-trip-config-modal']);
+            
+            setupModal('settings-modal', 'settings-btn', ['cancel-settings-btn']);
+            document.getElementById('save-settings-btn').addEventListener('click', async () => {
+                defaultValues.base = Number(document.getElementById('default-base').value) || 0;
+                defaultValues.travel = Number(document.getElementById('default-travel').value) || 0;
+                defaultValues.food = Number(document.getElementById('default-food').value) || 0;
+                await saveDefaultValues();
+                document.getElementById('settings-modal').classList.add('hidden');
+            });
+            document.getElementById('settings-btn').addEventListener('click', () => {
+                document.getElementById('default-base').value = defaultValues.base;
+                document.getElementById('default-travel').value = defaultValues.travel;
+                document.getElementById('default-food').value = defaultValues.food;
+            });
+            
             document.getElementById('google-login-btn').addEventListener('click', handleGoogleLogin);
             document.getElementById('facebook-login-btn').addEventListener('click', handleFacebookLogin);
             document.getElementById('email-login-btn').addEventListener('click', handleEmailLogin);
             document.getElementById('close-login-modal').addEventListener('click', () => {
                 document.getElementById('login-modal').classList.add('hidden');
             });
-            // END: New Event Listeners for Login
 
             tripCountersContainer.addEventListener('click', handleTripCounterClick);
             document.getElementById('notification-toggle').addEventListener('click', handleNotificationToggle);
@@ -471,18 +881,126 @@
             document.getElementById('export-pdf').addEventListener('click', exportToPDF);
             document.getElementById('backup-data').addEventListener('click', backupData);
             document.getElementById('import-data').addEventListener('change', importData);
+
+            listenersAttached = true;
         }
 
         // --- Utility & Export/Import ---
-        // ... (All functions are the same as original)
-
-        // NOTE: All the business logic functions (renderCalendar, save, calculateTripPay, etc.)
-        // do not need to be changed. They will automatically work with the `currentUserId`
-        // regardless of whether the user is anonymous or fully logged in.
-        // I have removed them from this script block for brevity but they should remain in your file.
-        // Example of one of the original functions:
         const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        // ... etc. ...
+        function getPayPeriodDates(date, period) {
+            const y = date.getFullYear(), m = date.getMonth();
+            const monthText = date.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+            if (period === 1) return { start: formatDate(new Date(y, m, 1)), end: formatDate(new Date(y, m, 15)), monthText };
+            const lastDay = new Date(y, m + 1, 0).getDate();
+            return { start: formatDate(new Date(y, m, 16)), end: formatDate(new Date(y, m, lastDay)), monthText };
+        }
+        async function getDataForExport() {
+            if (!currentUserId) return [];
+            const { start, end } = getPayPeriodDates(currentDate, currentPeriodView);
+            const q = query(getWageCollectionRef(), where("date", ">=", start), where("date", "<=", end));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.id.localeCompare(b.id));
+        }
+        async function exportToExcel() {
+            const data = await getDataForExport();
+            if (data.length === 0) { alert("ไม่มีข้อมูลในรอบบิลนี้สำหรับ Export"); return; }
+            const flattenedData = data.map(d => {
+                const income = d.income || {}; const trips = d.trips || {};
+                let row = { 'วันที่': d.id, 'กะ': d.shift };
+                Object.keys(CATEGORY_NAMES).forEach(key => row[CATEGORY_NAMES[key]] = income[key] || 0);
+                Object.keys(tripConfigs).forEach(key => {
+                    row[tripConfigs[key].name] = calculateTripPay(key, trips[key] || 0);
+                });
+                row['รวม'] = Object.values(row).slice(2).reduce((acc, val) => acc + (Number(val) || 0), 0);
+                return row;
+            });
+            const worksheet = XLSX.utils.json_to_sheet(flattenedData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, `รอบบิลที่ ${currentPeriodView}`);
+            XLSX.writeFile(workbook, `สรุปค่าจ้าง_รอบ${currentPeriodView}_${currentDate.getMonth()+1}-${currentDate.getFullYear()}.xlsx`);
+        }
+        async function exportToPDF() {
+            alert("การสร้าง PDF อาจไม่แสดงภาษาไทยอย่างถูกต้องในบางโปรแกรม");
+            const { jsPDF } = window.jspdf;
+            const data = await getDataForExport();
+            if (data.length === 0) { alert("ไม่มีข้อมูลในรอบบิลนี้สำหรับ Export"); return; }
+            const doc = new jsPDF({orientation: 'landscape'}); doc.setFont('helvetica');
+            const { monthText } = getPayPeriodDates(currentDate, currentPeriodView);
+            doc.text(`สรุปค่าจ้าง รอบที่ ${currentPeriodView} เดือน ${monthText}`, 14, 15);
+            
+            const allHeaders = new Set(['วันที่']);
+            data.forEach(d => {
+                Object.keys(d.income || {}).forEach(key => {if(d.income[key]>0) allHeaders.add(CATEGORY_NAMES[key] || key)});
+                Object.keys(d.trips || {}).forEach(key => {if(d.trips[key]>0) allHeaders.add(tripConfigs[key]?.name || key)});
+            });
+            allHeaders.add('รวม');
+            const tableColumn = Array.from(allHeaders);
+            const tableRows = []; let grandTotal = 0;
+
+            data.forEach(d => {
+                const rowData = {}; let dailyTotal = 0;
+                Object.keys(d.income || {}).forEach(key => {
+                    const name = CATEGORY_NAMES[key];
+                    if (name) { rowData[name] = d.income[key] || 0; dailyTotal += d.income[key] || 0; }
+                });
+                if (d.trips) {
+                    for (const key in d.trips) {
+                        const tripAmount = calculateTripPay(key, d.trips[key]);
+                        const tripName = tripConfigs[key]?.name || key;
+                        rowData[tripName] = tripAmount; dailyTotal += tripAmount;
+                    }
+                }
+                grandTotal += dailyTotal;
+                rowData['รวม'] = dailyTotal;
+                const row = tableColumn.map(col => rowData[col] || (col === 'วันที่' ? d.id : '0'));
+                tableRows.push(row);
+            });
+
+            doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
+            doc.text(`ยอดรวมสุทธิ: ${grandTotal.toLocaleString()} บาท`, 14, doc.lastAutoTable.finalY + 10);
+            doc.save(`สรุปค่าจ้าง_รอบ${currentPeriodView}_${currentDate.getMonth()+1}-${currentDate.getFullYear()}.pdf`);
+        }
+        async function backupData() {
+            if (!currentUserId) return;
+            const snapshot = await getDocs(query(getWageCollectionRef()));
+            let allData = { wages: {}, tripConfigs, defaultValues };
+            snapshot.forEach(doc => { allData.wages[doc.id] = doc.data(); });
+            const jsonString = JSON.stringify(allData, null, 2);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `wage_backup_${formatDate(new Date())}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        }
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (typeof data !== 'object' || data === null || !data.wages) throw new Error("Invalid JSON format");
+                    if (!confirm(`คุณกำลังจะนำเข้าข้อมูล ${Object.keys(data.wages).length} วัน และข้อมูลการตั้งค่าทั้งหมด ยืนยันหรือไม่? ข้อมูลเก่าจะถูกเขียนทับ`)) return;
+                    
+                    const batch = writeBatch(db);
+                    Object.keys(data.wages).forEach(dateString => {
+                        batch.set(doc(getWageCollectionRef(), dateString), data.wages[dateString]);
+                    });
+                    
+                    if (data.tripConfigs) { tripConfigs = data.tripConfigs; batch.set(getTripConfigDocRef(), tripConfigs); }
+                    if (data.defaultValues) { defaultValues = data.defaultValues; batch.set(getDefaultValuesDocRef(), defaultValues); }
+
+                    await batch.commit();
+
+                    alert("นำเข้าข้อมูลสำเร็จ!");
+                    await Promise.all([loadTripConfigs(), loadDefaultValues()]);
+                    await fetchAllDataForCalendarMarkers();
+                    selectDate(selectedDate);
+                } catch (error) { console.error("Import failed:", error); alert(`นำเข้าข้อมูลล้มเหลว: ${error.message}`);
+                } finally { event.target.value = ''; }
+            };
+            reader.readAsText(file);
+        }
     </script>
 </body>
 </html>
