@@ -187,41 +187,19 @@
             <h4 class="text-xl font-bold mb-2 text-center">เข้าสู่ระบบ / สมัครสมาชิก</h4>
             <p class="text-sm text-center text-secondary mb-6">เพื่อสำรองข้อมูลและใช้งานข้ามอุปกรณ์</p>
 
-            <div class="flex border-b border-border-color mb-4">
-                <button id="email-tab-btn" class="flex-1 py-2 text-center font-semibold border-b-2 border-blue-600 text-primary">อีเมล</button>
-                <button id="phone-tab-btn" class="flex-1 py-2 text-center font-semibold border-b-2 border-transparent text-secondary">เบอร์โทรศัพท์</button>
-            </div>
-
             <div id="email-login-form" class="space-y-3">
                 <input type="email" id="email-input" placeholder="อีเมล" class="form-input">
                 <input type="password" id="password-input" placeholder="รหัสผ่าน (6 ตัวอักษรขึ้นไป)" class="form-input">
                 <button id="email-login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg">เข้าสู่ระบบ / สมัครด้วยอีเมล</button>
             </div>
-
-            <div id="phone-login-form" class="space-y-3 hidden">
-                <div id="phone-entry-view">
-                    <p class="text-xs text-secondary mb-2">กรุณาใส่เบอร์โทรศัพท์ในรูปแบบ +66XXXXXXXXX (เช่น +66812345678)</p>
-                    <input type="tel" id="phone-input" placeholder="+66812345678" class="form-input">
-                    <button id="send-otp-btn" class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg">รับรหัสยืนยัน (OTP)</button>
-                </div>
-                <div id="otp-entry-view" class="hidden">
-                    <p class="text-xs text-secondary mb-2">รหัส OTP ถูกส่งไปที่เบอร์ <span id="phone-display" class="font-bold"></span></p>
-                    <input type="number" id="otp-input" placeholder="กรอกรหัส 6 หลัก" class="form-input" maxlength="6">
-                    <button id="confirm-otp-btn" class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg">ยืนยันและเข้าสู่ระบบ</button>
-                    <button id="cancel-phone-btn" class="w-full mt-2 text-sm text-secondary hover:text-primary">ยกเลิก</button>
-                </div>
-            </div>
             
             <button id="close-login-modal" class="mt-6 w-full text-secondary hover:text-primary">ปิด</button>
         </div>
     </div>
-
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, onAuthStateChanged, signInAnonymously, EmailAuthProvider,
-            PhoneAuthProvider, RecaptchaVerifier, signInWithPhoneNumber,
             linkWithCredential, signOut
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, onSnapshot, query, where, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -272,7 +250,6 @@
         let defaultValues = {};
         let dailyTripCounts = {};
         let notificationInterval = null;
-        let confirmationResult = null;
         
         // --- Default Configs ---
         const FALLBACK_DEFAULT_VALUES = { base: 372, travel: 60, food: 50 };
@@ -317,7 +294,7 @@
                 };
                 userActionArea.appendChild(loginButton);
             } else {
-                userInfoDisplay.textContent = `ล็อกอินเป็น: ${user.email || user.phoneNumber}`;
+                userInfoDisplay.textContent = `ล็อกอินเป็น: ${user.email}`;
                 const logoutButton = document.createElement('button');
                 logoutButton.id = 'logout-btn';
                 logoutButton.className = 'bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-lg text-sm';
@@ -356,113 +333,8 @@
             }
         }
         
-        function setupRecaptcha() {
-             // Create a new RecaptchaVerifier instance, binding it to the button.
-             window.recaptchaVerifier = new RecaptchaVerifier(auth, 'send-otp-btn', {
-                'size': 'invisible',
-                'callback': (response) => {
-                    // This callback is executed when reCAPTCHA is solved.
-                    // We can now proceed with sending the OTP.
-                    console.log("reCAPTCHA solved, ready to send OTP.");
-                },
-                'expired-callback': () => {
-                    alert('reCAPTCHA หมดอายุ กรุณาลองอีกครั้ง');
-                }
-            });
-        }
-
-        async function handleSendOtp() {
-            const phoneNumber = document.getElementById('phone-input').value;
-            const phoneRegex = /^\+66\d{9}$/;
-            if (!phoneRegex.test(phoneNumber)) {
-                alert('รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง กรุณาใช้รูปแบบ +66XXXXXXXXX');
-                return;
-            }
-            
-            const sendOtpBtn = document.getElementById('send-otp-btn');
-            sendOtpBtn.disabled = true;
-            sendOtpBtn.textContent = 'กำลังส่ง...';
-
-            try {
-                // The reCAPTCHA will solve when the user clicks the button.
-                confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier);
-                
-                // Switch UI to OTP entry
-                document.getElementById('phone-entry-view').classList.add('hidden');
-                document.getElementById('otp-entry-view').classList.remove('hidden');
-                document.getElementById('phone-display').textContent = phoneNumber;
-            } catch (error) {
-                console.error("SMS not sent:", error);
-                alert("เกิดข้อผิดพลาดในการส่ง OTP: " + error.message);
-                // Reset the verifier if it fails.
-                window.recaptchaVerifier.render().then(widgetId => {
-                    grecaptcha.reset(widgetId);
-                });
-            } finally {
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.textContent = 'รับรหัสยืนยัน (OTP)';
-            }
-        }
-
-        async function handleConfirmOtp() {
-            const otp = document.getElementById('otp-input').value;
-            if (!confirmationResult || otp.length !== 6) {
-                alert('กรุณากรอกรหัส OTP 6 หลัก');
-                return;
-            }
-            
-            try {
-                const credential = PhoneAuthProvider.credential(confirmationResult.verificationId, otp);
-                await linkWithCredential(auth.currentUser, credential);
-                alert('เชื่อมต่อบัญชีด้วยเบอร์โทรศัพท์สำเร็จ!');
-                document.getElementById('login-modal').classList.add('hidden');
-            } catch (error) {
-                console.error("OTP confirmation failed:", error);
-                if (error.code === 'auth/invalid-verification-code') {
-                    alert('รหัส OTP ไม่ถูกต้อง');
-                } else if (error.code === 'auth/credential-already-in-use') {
-                    alert('เบอร์โทรศัพท์นี้ถูกใช้งานโดยบัญชีอื่นแล้ว');
-                } else {
-                    alert(`เกิดข้อผิดพลาดในการยืนยัน OTP: ${error.message}`);
-                }
-            }
-        }
-        
-        function switchLoginTab(tab) {
-            const emailTabBtn = document.getElementById('email-tab-btn');
-            const phoneTabBtn = document.getElementById('phone-tab-btn');
-            const emailForm = document.getElementById('email-login-form');
-            const phoneForm = document.getElementById('phone-login-form');
-            
-            if (tab === 'email') {
-                emailTabBtn.classList.add('border-blue-600', 'text-primary');
-                emailTabBtn.classList.remove('border-transparent', 'text-secondary');
-                phoneTabBtn.classList.add('border-transparent', 'text-secondary');
-                phoneTabBtn.classList.remove('border-blue-600', 'text-primary');
-                emailForm.classList.remove('hidden');
-                phoneForm.classList.add('hidden');
-            } else { // phone
-                phoneTabBtn.classList.add('border-blue-600', 'text-primary');
-                phoneTabBtn.classList.remove('border-transparent', 'text-secondary');
-                emailTabBtn.classList.add('border-transparent', 'text-secondary');
-                emailTabBtn.classList.remove('border-blue-600', 'text-primary');
-                phoneForm.classList.remove('hidden');
-                emailForm.classList.add('hidden');
-                // Setup reCAPTCHA only when the phone tab is active
-                setupRecaptcha();
-            }
-        }
-        
         // --- (Rest of the application logic remains the same) ---
-        // This is a placeholder for all the other functions from the previous correct version.
-        // It includes: updateSyncIcon, getWageCollectionRef, getTripConfigDocRef, getDefaultValuesDocRef,
-        // loadDefaultValues, saveDefaultValues, renderDefaultValuesDisplay, loadTripConfigs, saveTripConfigs,
-        // initializeAppState, renderCalendar, selectDate, renderTripCounters, updateTripCounterUI,
-        // updateAllTripCountersUI, updateTripDescription, updateAllTripDescriptions, handleTripCounterClick,
-        // calculateTripPay, clearForm, populateForm, handleSave, listenToSpecificPayPeriod,
-        // fetchAllDataForCalendarMarkers, updateSummary, updateSummaryCards, setupModal,
-        // scheduleNotificationCheck, handleNotificationToggle, attachEventListenersOnce, formatDate,
-        // getPayPeriodDates, getDataForExport, exportToExcel, exportToPDF, backupData, importData
+        // Placeholder for all other functions like updateSyncIcon, data management, calendar, etc.
         function updateSyncIcon(status) { syncIcon.classList.remove('text-yellow-500', 'text-green-500', 'text-red-500'); switch(status) { case 'synced': syncIcon.classList.add('text-green-500'); break; case 'error': syncIcon.classList.add('text-red-500'); break; case 'connecting': default: syncIcon.classList.add('text-yellow-500'); break; } }
         const getWageCollectionRef = () => collection(db, 'users', currentUserId, 'wages');
         const getTripConfigDocRef = () => doc(db, 'users', currentUserId, 'settings', 'tripConfig');
@@ -498,7 +370,7 @@
         function scheduleNotificationCheck() { if (notificationInterval) clearInterval(notificationInterval); notificationInterval = setInterval(() => { const now = new Date(); if (now.getHours() === 20) { if (!allDataCache[formatDate(now)]) new Notification('บันทึกค่าจ้างรายวัน', { body: 'อย่าลืมบันทึกข้อมูลค่าจ้างของวันนี้!' }); } }, 3600 * 1000); }
         async function handleNotificationToggle() { if (!('Notification' in window)) { alert('เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน'); return; } if (Notification.permission === 'granted') { alert('การแจ้งเตือนทำงานอยู่แล้ว'); } else if (Notification.permission !== 'denied') { const permission = await Notification.requestPermission(); if (permission === 'granted') { new Notification('เปิดการแจ้งเตือนสำเร็จ!'); scheduleNotificationCheck(); } else { alert('คุณไม่อนุญาตให้แสดงการแจ้งเตือน'); } } else { alert('คุณได้ปิดการแจ้งเตือนไว้ กรุณาไปที่การตั้งค่าของเบราว์เซอร์เพื่อเปิดใช้งาน'); } }
         let listenersAttached = false;
-        function attachEventListenersOnce() { if (listenersAttached) return; document.getElementById('prev-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); listenToSpecificPayPeriod(); renderCalendar(); }); document.getElementById('next-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); listenToSpecificPayPeriod(); renderCalendar(); }); document.querySelector('input[value="night"]').addEventListener('change', (e) => { inputs['night-allowance'].value = e.target.checked ? 100 : ''; }); document.querySelector('input[value="day"]').addEventListener('change', (e) => { if(e.target.checked) inputs['night-allowance'].value = ''; }); document.getElementById('save-btn').addEventListener('click', handleSave); document.getElementById('period-1-btn').addEventListener('click', () => { currentPeriodView = 1; listenToSpecificPayPeriod(); }); document.getElementById('period-2-btn').addEventListener('click', () => { currentPeriodView = 2; listenToSpecificPayPeriod(); }); setupModal('delete-modal', 'delete-btn', ['cancel-delete-btn']); document.getElementById('confirm-delete-btn').addEventListener('click', async () => { if (!currentUserId || !selectedDate) return; await deleteDoc(doc(getWageCollectionRef(), formatDate(selectedDate))); delete allDataCache[formatDate(selectedDate)]; selectDate(selectedDate); document.getElementById('delete-modal').classList.add('hidden'); }); setupModal('trip-config-modal', 'manage-trips-btn', ['close-trip-config-modal']); setupModal('settings-modal', 'settings-btn', ['cancel-settings-btn']); document.getElementById('save-settings-btn').addEventListener('click', async () => { defaultValues.base = Number(document.getElementById('default-base').value) || 0; defaultValues.travel = Number(document.getElementById('default-travel').value) || 0; defaultValues.food = Number(document.getElementById('default-food').value) || 0; await saveDefaultValues(); document.getElementById('settings-modal').classList.add('hidden'); }); document.getElementById('settings-btn').addEventListener('click', () => { document.getElementById('default-base').value = defaultValues.base; document.getElementById('default-travel').value = defaultValues.travel; document.getElementById('default-food').value = defaultValues.food; }); document.getElementById('email-login-btn').addEventListener('click', handleEmailLogin); document.getElementById('send-otp-btn').addEventListener('click', handleSendOtp); document.getElementById('confirm-otp-btn').addEventListener('click', handleConfirmOtp); document.getElementById('cancel-phone-btn').addEventListener('click', () => { document.getElementById('otp-entry-view').classList.add('hidden'); document.getElementById('phone-entry-view').classList.remove('hidden'); }); document.getElementById('email-tab-btn').addEventListener('click', () => switchLoginTab('email')); document.getElementById('phone-tab-btn').addEventListener('click', () => switchLoginTab('phone')); document.getElementById('close-login-modal').addEventListener('click', () => { document.getElementById('login-modal').classList.add('hidden'); }); tripCountersContainer.addEventListener('click', handleTripCounterClick); document.getElementById('notification-toggle').addEventListener('click', handleNotificationToggle); document.getElementById('export-excel').addEventListener('click', exportToExcel); document.getElementById('export-pdf').addEventListener('click', exportToPDF); document.getElementById('backup-data').addEventListener('click', backupData); document.getElementById('import-data').addEventListener('change', importData); listenersAttached = true; }
+        function attachEventListenersOnce() { if (listenersAttached) return; document.getElementById('prev-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); listenToSpecificPayPeriod(); renderCalendar(); }); document.getElementById('next-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); listenToSpecificPayPeriod(); renderCalendar(); }); document.querySelector('input[value="night"]').addEventListener('change', (e) => { inputs['night-allowance'].value = e.target.checked ? 100 : ''; }); document.querySelector('input[value="day"]').addEventListener('change', (e) => { if(e.target.checked) inputs['night-allowance'].value = ''; }); document.getElementById('save-btn').addEventListener('click', handleSave); document.getElementById('period-1-btn').addEventListener('click', () => { currentPeriodView = 1; listenToSpecificPayPeriod(); }); document.getElementById('period-2-btn').addEventListener('click', () => { currentPeriodView = 2; listenToSpecificPayPeriod(); }); setupModal('delete-modal', 'delete-btn', ['cancel-delete-btn']); document.getElementById('confirm-delete-btn').addEventListener('click', async () => { if (!currentUserId || !selectedDate) return; await deleteDoc(doc(getWageCollectionRef(), formatDate(selectedDate))); delete allDataCache[formatDate(selectedDate)]; selectDate(selectedDate); document.getElementById('delete-modal').classList.add('hidden'); }); setupModal('trip-config-modal', 'manage-trips-btn', ['close-trip-config-modal']); setupModal('settings-modal', 'settings-btn', ['cancel-settings-btn']); document.getElementById('save-settings-btn').addEventListener('click', async () => { defaultValues.base = Number(document.getElementById('default-base').value) || 0; defaultValues.travel = Number(document.getElementById('default-travel').value) || 0; defaultValues.food = Number(document.getElementById('default-food').value) || 0; await saveDefaultValues(); document.getElementById('settings-modal').classList.add('hidden'); }); document.getElementById('settings-btn').addEventListener('click', () => { document.getElementById('default-base').value = defaultValues.base; document.getElementById('default-travel').value = defaultValues.travel; document.getElementById('default-food').value = defaultValues.food; }); document.getElementById('email-login-btn').addEventListener('click', handleEmailLogin); document.getElementById('close-login-modal').addEventListener('click', () => { document.getElementById('login-modal').classList.add('hidden'); }); tripCountersContainer.addEventListener('click', handleTripCounterClick); document.getElementById('notification-toggle').addEventListener('click', handleNotificationToggle); document.getElementById('export-excel').addEventListener('click', exportToExcel); document.getElementById('export-pdf').addEventListener('click', exportToPDF); document.getElementById('backup-data').addEventListener('click', backupData); document.getElementById('import-data').addEventListener('change', importData); listenersAttached = true; }
         const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         function getPayPeriodDates(date, period) { const y = date.getFullYear(), m = date.getMonth(); const monthText = date.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' }); if (period === 1) return { start: formatDate(new Date(y, m, 1)), end: formatDate(new Date(y, m, 15)), monthText }; const lastDay = new Date(y, m + 1, 0).getDate(); return { start: formatDate(new Date(y, m, 16)), end: formatDate(new Date(y, m, lastDay)), monthText }; }
         async function getDataForExport() { if (!currentUserId) return []; const { start, end } = getPayPeriodDates(currentDate, currentPeriodView); const q = query(getWageCollectionRef(), where("date", ">=", start), where("date", "<=", end)); const snapshot = await getDocs(q); return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.id.localeCompare(b.id)); }
