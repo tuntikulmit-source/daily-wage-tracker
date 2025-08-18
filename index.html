@@ -84,14 +84,129 @@
         </header>
 
         <div id="main-content">
-            <!-- Calendar, Form, and other sections go here -->
+             <!-- Calendar Section -->
+            <div class="card p-4 rounded-lg shadow-lg mb-4">
+                <div class="flex justify-between items-center mb-3">
+                    <button id="prev-month" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">&lt;</button>
+                    <h2 id="month-year" class="text-xl font-semibold"></h2>
+                    <button id="next-month" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">&gt;</button>
+                </div>
+                <div class="grid grid-cols-7 text-center text-xs text-secondary mb-2">
+                    <div>อา</div><div>จ</div><div>อ</div><div>พ</div><div>พฤ</div><div>ศ</div><div>ส</div>
+                </div>
+                <div id="calendar" class="calendar-grid"></div>
+            </div>
+
+            <!-- Data Entry Form -->
+            <div class="card p-4 rounded-lg shadow-lg mb-4">
+                <h3 class="text-lg font-semibold mb-3">บันทึกข้อมูลสำหรับวันที่: <span id="selected-date-display" class="text-blue-400"></span></h3>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <button id="day-shift-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded-lg transition">☀️ กะเช้า</button>
+                    <button id="night-shift-btn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition">🌙 กะดึก</button>
+                </div>
+                <div class="border-b pb-4 mb-4" style="border-color: var(--border-color);">
+                    <h4 class="text-lg font-semibold mb-3">รายรับพื้นฐานและเที่ยววิ่ง</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div><label>ค่าจ้าง: <input id="wage" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="372"></label></div>
+                        <div><label>ค่าเดินทาง: <input id="travel" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="60"></label></div>
+                        <div><label>ค่าอาหาร: <input id="food" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="50"></label></div>
+                    </div>
+                    <div id="special-jobs-container" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3"></div>
+                    <div class="flex justify-end items-center mt-3 gap-2">
+                        <button id="add-job-type-btn" class="text-sm bg-green-600 hover:bg-green-500 text-white font-bold py-1 px-3 rounded-lg transition">+ เพิ่มประเภทงาน</button>
+                        <button id="edit-prices-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded-lg transition">⚙️ ตั้งค่าราคา</button>
+                    </div>
+                </div>
+                <div class="border-b pb-4 mb-4" style="border-color: var(--border-color);">
+                    <h4 class="text-lg font-semibold mb-3">ข้อมูลรถ</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label>เบอร์รถคันที่ 1: <input id="vehicle1" type="text" class="w-full input-field rounded p-2 mt-1"></label></div>
+                        <div><label>เบอร์รถคันที่ 2: <input id="vehicle2" type="text" class="w-full input-field rounded p-2 mt-1"></label></div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <h4 class="text-lg font-semibold mb-3">รายรับอื่นๆ</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label>โอที (ก่อนงาน): <input id="ot_pre" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
+                        <div><label>โอที (หลังงาน): <input id="ot_post" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
+                        <div><label>ค่าอาหารพิเศษ: <input id="special_food" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
+                        <div><label>ค่ากะดึก: <input id="night_shift_allowance" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
+                        <div><label>เบี้ยขยัน: <input id="diligence_allowance" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
+                    </div>
+                </div>
+                <div class="flex gap-4 mt-4">
+                    <button id="save-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">บันทึก</button>
+                    <button id="delete-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition">ลบข้อมูล</button>
+                </div>
+            </div>
+            
+            <div class="card p-4 rounded-lg shadow-lg mb-4">
+                <h3 class="text-lg font-semibold mb-3">สรุปยอดรายรับ (แบ่งตามรอบบิล)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                    <div>
+                        <h4 class="font-bold text-blue-400 mb-2 pb-1 border-b" style="border-color: var(--border-color);">รอบวันที่ 1-15</h4>
+                        <div id="summary-period1" class="space-y-1"></div>
+                        <div class="mt-2 pt-2 border-t font-bold text-lg" style="border-color: var(--border-color);">รวม: <span id="total-period1" class="text-green-400">0</span> บาท</div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-blue-400 mb-2 pb-1 border-b" style="border-color: var(--border-color);">รอบวันที่ 16-สิ้นเดือน</h4>
+                        <div id="summary-period2" class="space-y-1"></div>
+                        <div class="mt-2 pt-2 border-t font-bold text-lg" style="border-color: var(--border-color);">รวม: <span id="total-period2" class="text-green-400">0</span> บาท</div>
+                    </div>
+                </div>
+                <div class="flex gap-4 mt-6 justify-center">
+                    <button id="export-excel-btn" class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg transition">📄 ส่งออก Excel</button>
+                    <button id="export-pdf-btn" class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition">📕 ส่งออก PDF</button>
+                </div>
+            </div>
+            
+            <div class="card p-4 rounded-lg shadow-lg mb-4">
+                <h3 class="text-lg font-semibold mb-3">ภาพรวมรายรับ</h3>
+                <div class="flex justify-center gap-4 mb-4">
+                    <select id="chart-year-select" class="input-field rounded p-2"></select>
+                    <select id="chart-month-select" class="input-field rounded p-2"></select>
+                </div>
+                <div class="w-full max-w-sm mx-auto">
+                    <canvas id="income-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="card p-4 rounded-lg shadow-lg mb-4">
+                <h3 class="text-lg font-semibold mb-3">ตารางสรุปรายละเอียดรายวัน</h3>
+                <div class="overflow-x-auto">
+                    <table id="details-table" class="w-full text-sm text-left">
+                        <thead class="text-xs uppercase table-header">
+                            <!-- Headers are now generated dynamically by JavaScript -->
+                        </thead>
+                        <tbody id="details-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Modals (Delete, Price) -->
-    <div id="delete-modal" class="modal">...</div>
-    <div id="price-modal" class="modal">...</div>
+    <!-- Modals -->
+    <div id="delete-modal" class="modal"><div class="modal-content text-center">
+        <h3 class="text-xl font-bold mb-4">ยืนยันการลบ</h3>
+        <p class="mb-6">คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลของวันที่ <span id="delete-date-confirm" class="font-bold text-red-400"></span>?</p>
+        <div class="flex gap-4">
+            <button id="confirm-delete-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">ยืนยัน</button>
+            <button id="cancel-delete-btn" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">ยกเลิก</button>
+        </div>
+    </div></div>
     
+    <div id="price-modal" class="modal"><div class="modal-content">
+        <h3 class="text-xl font-bold mb-4">ตั้งค่าราคางาน</h3>
+        <div id="price-modal-body" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2"></div>
+        <div class="flex justify-end mt-4">
+             <button id="add-job-type-in-modal-btn" class="text-sm bg-green-600 hover:bg-green-500 text-white font-bold py-1 px-3 rounded-lg transition">+ เพิ่มประเภทงานใหม่</button>
+        </div>
+        <div class="flex gap-4 mt-6">
+            <button id="save-prices-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">บันทึก</button>
+            <button id="cancel-prices-btn" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">ยกเลิก</button>
+        </div>
+    </div></div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
@@ -266,8 +381,6 @@
         }
 
         // --- All other functions (save, delete, modals, charts, etc.) are placed here ---
-        // This is a placeholder for the rest of the JS code.
-        // The full code is too long to repeat, but this structure ensures all parts are present.
         const allOtherFunctions = () => {
             const chartYearSelect = document.getElementById('chart-year-select');
             const chartMonthSelect = document.getElementById('chart-month-select');
@@ -302,122 +415,33 @@
             function addNewJobType() { const name = prompt("กรุณาใส่ชื่อประเภทงานใหม่:"); if (!name || name.trim() === '') return; const price = parseFloat(prompt(`ใส่ราคาต่อเที่ยวสำหรับ "${name}":`)); if (isNaN(price)) { alert("ราคาไม่ถูกต้อง"); return; } const key = `custom_${Date.now()}`; jobPrices[key] = { name: name.trim(), price: price, step: 1, isDefault: false }; renderSpecialJobInputs(); showPriceModal(); }
             function exportToExcel() { const wb = XLSX.utils.book_new(); const monthName = monthYearEl.textContent; const summaryData = [["สรุปยอด", monthName], [], ["รอบวันที่ 1-15"], ...document.getElementById('summary-period1').innerText.split('\n').map(l => l.split(': ')), ["รวม", document.getElementById('total-period1').innerText], [], ["รอบวันที่ 16-สิ้นเดือน"], ...document.getElementById('summary-period2').innerText.split('\n').map(l => l.split(': ')), ["รวม", document.getElementById('total-period2').innerText]]; const ws1 = XLSX.utils.aoa_to_sheet(summaryData); XLSX.utils.book_append_sheet(wb, ws1, "สรุปยอด"); const table = document.getElementById("details-table"); const ws2 = XLSX.utils.table_to_sheet(table); XLSX.utils.book_append_sheet(wb, ws2, "รายละเอียดรายวัน"); XLSX.writeFile(wb, `สรุปค่าจ้าง-${monthName}.xlsx`); }
             function exportToPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF({orientation: 'landscape'}); const monthName = monthYearEl.textContent; doc.addFileToVFS('Sarabun-Regular-normal.ttf', font); doc.addFont('Sarabun-Regular-normal.ttf', 'Sarabun-Regular', 'normal'); doc.setFont('Sarabun-Regular'); doc.text(`สรุปค่าจ้างเดือน ${monthName}`, 14, 16); doc.autoTable({ html: '#details-table', startY: 22, theme: 'grid', headStyles: { font: 'Sarabun-Regular', fillColor: [41, 128, 185] }, bodyStyles: { font: 'Sarabun-Regular' } }); doc.save(`สรุปค่าจ้าง-${monthName}.pdf`); }
-        };
-        allOtherFunctions();
         
-        // --- Event Listeners ---
-        document.getElementById('login-btn').addEventListener('click', handleSignIn);
-        document.getElementById('signup-btn').addEventListener('click', handleSignUp);
-        document.getElementById('guest-btn').addEventListener('click', () => signInAnonymously(auth));
-        themeToggleBtn.addEventListener('click', () => {
-            const isCurrentlyLight = document.documentElement.classList.contains('light-mode');
-            localStorage.setItem('darkMode', !isCurrentlyLight);
-            applyTheme(!isCurrentlyLight);
-        });
-
+            // --- Event Listeners ---
+            document.getElementById('prev-month').addEventListener('click', () => changeMonth(-1));
+            document.getElementById('next-month').addEventListener('click', () => changeMonth(1));
+            document.getElementById('save-btn').addEventListener('click', saveData);
+            document.getElementById('delete-btn').addEventListener('click', showDeleteModal);
+            document.getElementById('confirm-delete-btn').addEventListener('click', deleteData);
+            document.getElementById('cancel-delete-btn').addEventListener('click', hideDeleteModal);
+            document.getElementById('edit-prices-btn').addEventListener('click', showPriceModal);
+            document.getElementById('save-prices-btn').addEventListener('click', saveJobPrices);
+            document.getElementById('cancel-prices-btn').addEventListener('click', hidePriceModal);
+            document.getElementById('add-job-type-btn').addEventListener('click', addNewJobType);
+            document.getElementById('add-job-type-in-modal-btn').addEventListener('click', addNewJobType);
+            document.getElementById('price-modal').querySelector('#price-modal-body').addEventListener('click', e => { if (e.target.classList.contains('delete-job-btn')) { const key = e.target.dataset.key; if (key && confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบประเภทงาน "${jobPrices[key].name}"?`)) { delete jobPrices[key]; showPriceModal(); } } });
+            document.getElementById('day-shift-btn').addEventListener('click', () => { shift = 'day'; updateShiftButtons(); });
+            document.getElementById('night-shift-btn').addEventListener('click', () => { shift = 'night'; updateShiftButtons(); });
+            specialJobsContainer.addEventListener('click', e => { const input = e.target.closest('div').querySelector('.job-input'); if (!input) return; const step = parseFloat(input.dataset.step) || 1; let value = parseFloat(input.value) || 0; if (e.target.classList.contains('plus-btn')) value += step; if (e.target.classList.contains('minus-btn')) value -= step; input.value = Math.max(0, value); updateAllJobTotals(); });
+            specialJobsContainer.addEventListener('input', e => { if (e.target.classList.contains('job-input')) updateAllJobTotals(); });
+            document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
+            document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
+            chartYearSelect.addEventListener('change', renderIncomeChart);
+            chartMonthSelect.addEventListener('change', renderIncomeChart);
+        };
+        
         // --- Main Execution ---
         async function main() {
             // This function now only loads data and sets up listeners for the logged-in user
-            document.getElementById('main-content').innerHTML = `
-                <!-- Calendar Section -->
-                <div class="card p-4 rounded-lg shadow-lg mb-4">
-                    <div class="flex justify-between items-center mb-3">
-                        <button id="prev-month" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">&lt;</button>
-                        <h2 id="month-year" class="text-xl font-semibold"></h2>
-                        <button id="next-month" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">&gt;</button>
-                    </div>
-                    <div class="grid grid-cols-7 text-center text-xs text-secondary mb-2">
-                        <div>อา</div><div>จ</div><div>อ</div><div>พ</div><div>พฤ</div><div>ศ</div><div>ส</div>
-                    </div>
-                    <div id="calendar" class="calendar-grid"></div>
-                </div>
-
-                <!-- Data Entry Form -->
-                <div class="card p-4 rounded-lg shadow-lg mb-4">
-                    <h3 class="text-lg font-semibold mb-3">บันทึกข้อมูลสำหรับวันที่: <span id="selected-date-display" class="text-blue-400"></span></h3>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <button id="day-shift-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded-lg transition">☀️ กะเช้า</button>
-                        <button id="night-shift-btn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition">🌙 กะดึก</button>
-                    </div>
-                    <div class="border-b pb-4 mb-4" style="border-color: var(--border-color);">
-                        <h4 class="text-lg font-semibold mb-3">รายรับพื้นฐานและเที่ยววิ่ง</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div><label>ค่าจ้าง: <input id="wage" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="372"></label></div>
-                            <div><label>ค่าเดินทาง: <input id="travel" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="60"></label></div>
-                            <div><label>ค่าอาหาร: <input id="food" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="50"></label></div>
-                        </div>
-                        <div id="special-jobs-container" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3"></div>
-                        <div class="flex justify-end items-center mt-3 gap-2">
-                            <button id="add-job-type-btn" class="text-sm bg-green-600 hover:bg-green-500 text-white font-bold py-1 px-3 rounded-lg transition">+ เพิ่มประเภทงาน</button>
-                            <button id="edit-prices-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded-lg transition">⚙️ ตั้งค่าราคา</button>
-                        </div>
-                    </div>
-                    <div class="border-b pb-4 mb-4" style="border-color: var(--border-color);">
-                        <h4 class="text-lg font-semibold mb-3">ข้อมูลรถ</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label>เบอร์รถคันที่ 1: <input id="vehicle1" type="text" class="w-full input-field rounded p-2 mt-1"></label></div>
-                            <div><label>เบอร์รถคันที่ 2: <input id="vehicle2" type="text" class="w-full input-field rounded p-2 mt-1"></label></div>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <h4 class="text-lg font-semibold mb-3">รายรับอื่นๆ</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label>โอที (ก่อนงาน): <input id="ot_pre" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
-                            <div><label>โอที (หลังงาน): <input id="ot_post" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
-                            <div><label>ค่าอาหารพิเศษ: <input id="special_food" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
-                            <div><label>ค่ากะดึก: <input id="night_shift_allowance" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
-                            <div><label>เบี้ยขยัน: <input id="diligence_allowance" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
-                        </div>
-                    </div>
-                    <div class="flex gap-4 mt-4">
-                        <button id="save-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">บันทึก</button>
-                        <button id="delete-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition">ลบข้อมูล</button>
-                    </div>
-                </div>
-                
-                <div class="card p-4 rounded-lg shadow-lg mb-4">
-                    <h3 class="text-lg font-semibold mb-3">สรุปยอดรายรับ (แบ่งตามรอบบิล)</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                        <div>
-                            <h4 class="font-bold text-blue-400 mb-2 pb-1 border-b" style="border-color: var(--border-color);">รอบวันที่ 1-15</h4>
-                            <div id="summary-period1" class="space-y-1"></div>
-                            <div class="mt-2 pt-2 border-t font-bold text-lg" style="border-color: var(--border-color);">รวม: <span id="total-period1" class="text-green-400">0</span> บาท</div>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-blue-400 mb-2 pb-1 border-b" style="border-color: var(--border-color);">รอบวันที่ 16-สิ้นเดือน</h4>
-                            <div id="summary-period2" class="space-y-1"></div>
-                            <div class="mt-2 pt-2 border-t font-bold text-lg" style="border-color: var(--border-color);">รวม: <span id="total-period2" class="text-green-400">0</span> บาท</div>
-                        </div>
-                    </div>
-                    <div class="flex gap-4 mt-6 justify-center">
-                        <button id="export-excel-btn" class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg transition">📄 ส่งออก Excel</button>
-                        <button id="export-pdf-btn" class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition">📕 ส่งออก PDF</button>
-                    </div>
-                </div>
-                
-                <div class="card p-4 rounded-lg shadow-lg mb-4">
-                    <h3 class="text-lg font-semibold mb-3">ภาพรวมรายรับ</h3>
-                    <div class="flex justify-center gap-4 mb-4">
-                        <select id="chart-year-select" class="input-field rounded p-2"></select>
-                        <select id="chart-month-select" class="input-field rounded p-2"></select>
-                    </div>
-                    <div class="w-full max-w-sm mx-auto">
-                        <canvas id="income-chart"></canvas>
-                    </div>
-                </div>
-
-                <div class="card p-4 rounded-lg shadow-lg mb-4">
-                    <h3 class="text-lg font-semibold mb-3">ตารางสรุปรายละเอียดรายวัน</h3>
-                    <div class="overflow-x-auto">
-                        <table id="details-table" class="w-full text-sm text-left">
-                            <thead class="text-xs uppercase table-header">
-                                <!-- Headers are now generated dynamically by JavaScript -->
-                            </thead>
-                            <tbody id="details-table-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
             allOtherFunctions();
             await loadJobPrices();
             const today = new Date();
