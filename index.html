@@ -195,12 +195,15 @@
     <div id="auth-modal" class="modal">
         <div class="modal-content">
             <h3 id="auth-modal-title" class="text-xl font-bold mb-4">เข้าสู่ระบบ / สมัครสมาชิก</h3>
-            <div id="auth-modal-error" class="text-red-400 mb-3 text-sm"></div>
+            <div id="auth-modal-error" class="mb-3 text-sm"></div>
             <div class="space-y-4">
                 <div><label>อีเมล: <input id="auth-email" type="email" class="w-full input-field rounded p-2 mt-1"></label></div>
                 <div><label>รหัสผ่าน: <input id="auth-password" type="password" class="w-full input-field rounded p-2 mt-1"></label></div>
             </div>
             <div id="auth-modal-actions" class="flex gap-4 mt-6"></div>
+            <div class="text-center mt-3">
+                <button id="reset-password-btn" class="text-sm text-blue-400 hover:underline">ลืมรหัสผ่าน?</button>
+            </div>
             <button id="cancel-auth-btn" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">ยกเลิก</button>
         </div>
     </div>
@@ -209,7 +212,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, onAuthStateChanged, signInAnonymously, 
-            signOut, EmailAuthProvider, linkWithCredential, signInWithEmailAndPassword
+            signOut, EmailAuthProvider, linkWithCredential, 
+            signInWithEmailAndPassword, sendPasswordResetEmail
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -311,8 +315,10 @@
 
         function showAuthModal() {
             const modal = document.getElementById('auth-modal');
+            const errorEl = modal.querySelector('#auth-modal-error');
             modal.querySelector('#auth-modal-title').textContent = 'เข้าสู่ระบบ หรือ สมัครสมาชิก';
-            modal.querySelector('#auth-modal-error').textContent = '';
+            errorEl.textContent = '';
+            errorEl.className = 'mb-3 text-sm text-red-400'; // Reset to default error color
             const actions = modal.querySelector('#auth-modal-actions');
             actions.innerHTML = `
                 <button id="signin-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">เข้าสู่ระบบ</button>
@@ -398,6 +404,25 @@
                     errorEl.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
                 }
                 console.error("Link account error:", error);
+            }
+        }
+
+        async function handlePasswordReset() {
+            const email = document.getElementById('auth-email').value;
+            const errorEl = document.getElementById('auth-modal-error');
+            if (!email) {
+                errorEl.textContent = 'กรุณากรอกอีเมลของคุณเพื่อรีเซ็ตรหัสผ่าน';
+                errorEl.className = 'mb-3 text-sm text-red-400';
+                return;
+            }
+            try {
+                await sendPasswordResetEmail(auth, email);
+                errorEl.textContent = 'ส่งอีเมลรีเซ็ตรหัสผ่านแล้ว! กรุณาตรวจสอบกล่องจดหมายของคุณ';
+                errorEl.className = 'mb-3 text-sm text-green-400';
+            } catch (error) {
+                console.error("Password reset error:", error);
+                errorEl.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
+                errorEl.className = 'mb-3 text-sm text-red-400';
             }
         }
         
@@ -601,16 +626,12 @@
         document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
         document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
         document.getElementById('cancel-auth-btn').addEventListener('click', () => document.getElementById('auth-modal').style.display = 'none');
+        document.getElementById('reset-password-btn').addEventListener('click', handlePasswordReset);
         chartYearSelect.addEventListener('change', renderIncomeChart);
         chartMonthSelect.addEventListener('change', renderIncomeChart);
         
-        // --- CORRECTED THEME TOGGLE LOGIC ---
         themeToggleBtn.addEventListener('click', () => {
-            // Check if light-mode is currently active.
             const isCurrentlyLight = document.documentElement.classList.contains('light-mode');
-            // The new state for 'isDark' should be the same as 'isCurrentlyLight'.
-            // If it's currently light (true), we want the new state to be dark (true).
-            // If it's currently dark (false), we want the new state to be light (false).
             const newIsDark = isCurrentlyLight;
             localStorage.setItem('darkMode', newIsDark);
             applyTheme(newIsDark);
@@ -626,7 +647,6 @@
         }
 
         // --- Initial theme setup ---
-        // Check localStorage for the user's preference. Default to dark mode if not set.
         const savedThemeIsDark = localStorage.getItem('darkMode') !== 'false';
         applyTheme(savedThemeIsDark);
 
