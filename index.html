@@ -208,9 +208,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, onAuthStateChanged, signInAnonymously, 
-            signOut, EmailAuthProvider, linkWithCredential
+            signOut, EmailAuthProvider, linkWithCredential, signInWithEmailAndPassword
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAoMrrWGRmd9PuyYtGkK7ZQUDZWdgaoYaE",
@@ -297,7 +297,7 @@
             if (user.isAnonymous) {
                 authStatusEl.innerHTML = `สถานะ: ผู้ใช้ชั่วคราว <span class="block text-gray-500">(User ID: ${user.uid})</span>`;
                 authActionsEl.innerHTML = `<button id="link-account-btn" class="text-sm text-blue-400 hover:underline">เข้าสู่ระบบ / สมัครสมาชิก เพื่อบันทึกข้อมูลถาวร</button>`;
-                document.getElementById('link-account-btn').addEventListener('click', () => showAuthModal('link'));
+                document.getElementById('link-account-btn').addEventListener('click', () => showAuthModal());
             } else {
                 authStatusEl.innerHTML = `ลงชื่อเข้าใช้เป็น: ${user.email} <span class="block text-gray-500">(User ID: ${user.uid})</span>`;
                 authActionsEl.innerHTML = `<button id="logout-btn" class="text-sm text-red-400 hover:underline">ออกจากระบบ</button>`;
@@ -308,29 +308,80 @@
             }
         }
 
-        function showAuthModal(mode) {
+        function showAuthModal() {
             const modal = document.getElementById('auth-modal');
-            const title = modal.querySelector('#auth-modal-title');
-            const actions = modal.querySelector('#auth-modal-actions');
+            modal.querySelector('#auth-modal-title').textContent = 'เข้าสู่ระบบ หรือ สมัครสมาชิก';
             modal.querySelector('#auth-modal-error').textContent = '';
-            
-            if (mode === 'link') {
-                title.textContent = 'เชื่อมต่อบัญชี';
-                actions.innerHTML = `<button id="link-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">ดำเนินการ</button>`;
-                document.getElementById('link-btn').addEventListener('click', handleLinkAccount);
-            }
+            const actions = modal.querySelector('#auth-modal-actions');
+            actions.innerHTML = `
+                <button id="signin-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">เข้าสู่ระบบ</button>
+                <button id="link-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">สมัครและเชื่อมต่อ</button>
+            `;
+            document.getElementById('signin-btn').addEventListener('click', handleSignIn);
+            document.getElementById('link-btn').addEventListener('click', handleLinkAccount);
             modal.style.display = 'block';
+        }
+
+        async function handleSignIn() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const errorEl = document.getElementById('auth-modal-error');
+            if (!email || !password) { errorEl.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน'; return; }
+
+            const anonymousUser = auth.currentUser;
+            if (!anonymousUser || !anonymousUser.isAnonymous) { errorEl.textContent = 'สถานะผู้ใช้ไม่ถูกต้อง'; return; }
+            const anonymousUid = anonymousUser.uid;
+
+            try {
+                errorEl.textContent = 'กำลังสำรองข้อมูลชั่วคราว...';
+                const wagesColRef = collection(db, `artifacts/${appId}/users/${anonymousUid}/wages`);
+                const settingsDocRef = doc(db, `artifacts/${appId}/users/${anonymousUid}/settings`, 'jobPrices');
+                const wagesSnapshot = await getDocs(wagesColRef);
+                const settingsSnap = await getDoc(settingsDocRef);
+                const tempData = { wages: {}, settings: settingsSnap.exists() ? settingsSnap.data() : null };
+                wagesSnapshot.forEach(doc => { tempData.wages[doc.id] = doc.data(); });
+
+                errorEl.textContent = 'กำลังออกจากระบบชั่วคราว...';
+                await signOut(auth);
+
+                errorEl.textContent = 'กำลังเข้าสู่ระบบ...';
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const permanentUid = userCredential.user.uid;
+                
+                errorEl.textContent = 'กำลังรวมข้อมูล...';
+                if (Object.keys(tempData.wages).length > 0 || tempData.settings) {
+                    const batch = writeBatch(db);
+                    for (const date in tempData.wages) {
+                        const docRef = doc(db, `artifacts/${appId}/users/${permanentUid}/wages`, date);
+                        batch.set(docRef, tempData.wages[date], { merge: true });
+                    }
+                    if (tempData.settings) {
+                        const permanentSettingsRef = doc(db, `artifacts/${appId}/users/${permanentUid}/settings`, 'jobPrices');
+                        batch.set(permanentSettingsRef, tempData.settings, { merge: true });
+                    }
+                    await batch.commit();
+                }
+                
+                alert('เข้าสู่ระบบและรวมข้อมูลสำเร็จ!');
+                document.getElementById('auth-modal').style.display = 'none';
+            } catch (error) {
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                    errorEl.textContent = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+                } else {
+                    errorEl.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
+                }
+                console.error("Sign in error:", error);
+                if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+            }
         }
 
         async function handleLinkAccount() {
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
             const errorEl = document.getElementById('auth-modal-error');
-            
-            if (!email || password.length < 6) {
-                errorEl.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน (อย่างน้อย 6 ตัวอักษร)';
-                return;
-            }
+            if (!email || password.length < 6) { errorEl.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน (อย่างน้อย 6 ตัวอักษร)'; return; }
 
             try {
                 const credential = EmailAuthProvider.credential(email, password);
@@ -339,7 +390,7 @@
                 document.getElementById('auth-modal').style.display = 'none';
             } catch (error) {
                 if (error.code === 'auth/email-already-in-use') {
-                    errorEl.textContent = 'อีเมลนี้ถูกใช้แล้ว กรุณาใช้อีเมลอื่น หรือออกจากระบบแล้วเข้าสู่ระบบด้วยอีเมลนี้';
+                    errorEl.textContent = 'อีเมลนี้ถูกใช้แล้ว กรุณาเลือก "เข้าสู่ระบบ"';
                 } else if (error.code === 'auth/weak-password') {
                      errorEl.textContent = 'รหัสผ่านไม่ปลอดภัย (ต้องมีอย่างน้อย 6 ตัวอักษร)';
                 } else {
@@ -520,7 +571,7 @@
         function updateShiftButtons() { const dayBtn = document.getElementById('day-shift-btn'); const nightBtn = document.getElementById('night-shift-btn'); dayBtn.classList.remove('shift-selected'); nightBtn.classList.remove('shift-selected'); if (shift === 'day') { dayBtn.classList.add('shift-selected'); inputs.night_shift_allowance.value = ''; } else { nightBtn.classList.add('shift-selected'); inputs.night_shift_allowance.value = 100; } }
         async function saveData() { if (!selectedDate) { alert('กรุณาเลือกวันที่ก่อนบันทึก'); return; } const data = { shift }; let hasValue = false; inputIds.forEach(id => { const value = inputs[id].type === 'number' ? parseFloat(inputs[id].value) : inputs[id].value; if (inputs[id].value.trim() !== '') { data[id] = isNaN(value) ? inputs[id].value : value; hasValue = true; } else { data[id] = null; } }); document.querySelectorAll('.job-input').forEach(input => { const key = input.dataset.jobKey; const value = parseFloat(input.value); if (!isNaN(value) && value > 0) { data[`job_${key}`] = value; hasValue = true; } else { data[`job_${key}`] = null; } }); if (!hasValue) { alert('ไม่มีข้อมูลให้บันทึก'); return; } const docRef = doc(db, `artifacts/${appId}/users/${userId}/wages`, selectedDate); try { await setDoc(docRef, data); console.log("บันทึกข้อมูลสำเร็จ!"); clearForm(); setDefaults(); } catch (error) { console.error("เกิดข้อผิดพลาดในการบันทึก: ", error); } }
         async function deleteData() { if (!selectedDate) return; const docRef = doc(db, `artifacts/${appId}/users/${userId}/wages`, selectedDate); try { await deleteDoc(docRef); console.log("ลบข้อมูลสำเร็จ!"); clearForm(); setDefaults(); hideDeleteModal(); } catch (error) { console.error("เกิดข้อผิดพลาดในการลบ: ", error); hideDeleteModal(); } }
-        function updateSummariesAndTable() { const period1 = {}; const period2 = {}; const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'โอที (ก่อน)', ot_post: 'โอที (หลัง)', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' }; const table = document.getElementById('details-table'); const thead = table.querySelector('thead'); const tableBody = table.querySelector('tbody'); tableBody.innerHTML = ''; thead.innerHTML = ''; const headerRow = document.createElement('tr'); const staticHeaders = ['วันที่', 'กะ', 'เบอร์รถ', 'รวม']; staticHeaders.forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); Object.values(incomeLabels).forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); Object.values(jobPrices).forEach(job => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = job.name; headerRow.appendChild(th); }); thead.appendChild(headerRow); Object.entries(monthlyData).sort(([dateA], [dateB]) => dateA.localeCompare(dateB)).forEach(([dateStr, data]) => { const localDate = new Date(dateStr + 'T00:00:00'); const day = localDate.getDate(); const targetPeriod = day <= 15 ? period1 : period2; let dailyTotal = 0; let specialJobsTotal = 0; for(const key in incomeLabels) { const value = parseFloat(data[key]) || 0; if(value > 0) { targetPeriod[key] = (targetPeriod[key] || 0) + value; dailyTotal += value; } } for (const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; if (count > 0) { let jobTotal = 0; if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } specialJobsTotal += jobTotal; const periodKey = `job_${key}`; targetPeriod[periodKey] = (targetPeriod[periodKey] || 0) + jobTotal; } } dailyTotal += specialJobsTotal; const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ') || '-'; const row = document.createElement('tr'); row.className = 'table-row hover:bg-tertiary'; row.innerHTML = `<td class="px-3 py-2">${localDate.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</td><td class="px-3 py-2">${data.shift === 'night' ? '🌙' : '☀️'}</td><td class="px-3 py-2 text-purple-400 font-semibold">${vehicleText}</td><td class="px-3 py-2 font-bold text-green-400">${dailyTotal.toLocaleString()}</td>`; for(const key in incomeLabels) { row.innerHTML += `<td class="px-3 py-2">${(parseFloat(data[key]) || 0).toLocaleString()}</td>`; } for(const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; let jobTotal = 0; if (count > 0) { if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } } row.innerHTML += `<td class="px-3 py-2">${jobTotal.toLocaleString()}</td>`; } tableBody.appendChild(row); }); const renderSummary = (periodData, elId, totalElId) => { const el = document.getElementById(elId); el.innerHTML = ''; let total = 0; const sortedKeys = Object.keys(periodData).sort(); sortedKeys.forEach(key => { const value = periodData[key]; total += value; let label = incomeLabels[key]; if (key.startsWith('job_')) { const jobKey = key.substring(4); label = jobPrices[jobKey]?.name || 'งานพิเศษ'; } if (label) { el.innerHTML += `<p>${label}: <span class="float-right font-semibold">${value.toLocaleString()}</span></p>`; } }); document.getElementById(totalElId).textContent = total.toLocaleString(); }; renderSummary(period1, 'summary-period1', 'total-period1'); renderSummary(period2, 'summary-period2', 'total-period2'); }
+        function updateSummariesAndTable() { const period1 = {}; const period2 = {}; const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'OT ก่อน', ot_post: 'OT หลัง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' }; const table = document.getElementById('details-table'); const thead = table.querySelector('thead'); const tableBody = table.querySelector('tbody'); tableBody.innerHTML = ''; thead.innerHTML = ''; const headerRow = document.createElement('tr'); const staticHeaders = ['วันที่', 'กะ', 'เบอร์รถ', 'รวม']; staticHeaders.forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); Object.values(incomeLabels).forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); Object.values(jobPrices).forEach(job => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = job.name; headerRow.appendChild(th); }); thead.appendChild(headerRow); Object.entries(monthlyData).sort(([dateA], [dateB]) => dateA.localeCompare(dateB)).forEach(([dateStr, data]) => { const localDate = new Date(dateStr + 'T00:00:00'); const day = localDate.getDate(); const targetPeriod = day <= 15 ? period1 : period2; let dailyTotal = 0; for(const key in incomeLabels) { const value = parseFloat(data[key]) || 0; if(value > 0) { targetPeriod[key] = (targetPeriod[key] || 0) + value; dailyTotal += value; } } for (const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; if (count > 0) { let jobTotal = 0; if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } dailyTotal += jobTotal; const periodKey = `job_${key}`; targetPeriod[periodKey] = (targetPeriod[periodKey] || 0) + jobTotal; } } const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ') || '-'; const row = document.createElement('tr'); row.className = 'table-row hover:bg-tertiary'; row.innerHTML = `<td class="px-3 py-2">${localDate.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</td><td class="px-3 py-2">${data.shift === 'night' ? '🌙' : '☀️'}</td><td class="px-3 py-2 text-purple-400 font-semibold">${vehicleText}</td><td class="px-3 py-2 font-bold text-green-400">${dailyTotal.toLocaleString()}</td>`; for(const key in incomeLabels) { row.innerHTML += `<td class="px-3 py-2">${(parseFloat(data[key]) || 0).toLocaleString()}</td>`; } for(const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; let jobTotal = 0; if (count > 0) { if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } } row.innerHTML += `<td class="px-3 py-2">${jobTotal.toLocaleString()}</td>`; } tableBody.appendChild(row); }); const renderSummary = (periodData, elId, totalElId) => { const el = document.getElementById(elId); el.innerHTML = ''; let total = 0; const sortedKeys = Object.keys(periodData).sort(); sortedKeys.forEach(key => { const value = periodData[key]; total += value; let label = incomeLabels[key]; if (key.startsWith('job_')) { const jobKey = key.substring(4); label = jobPrices[jobKey]?.name || 'งานพิเศษ'; } if (label) { el.innerHTML += `<p>${label}: <span class="float-right font-semibold">${value.toLocaleString()}</span></p>`; } }); document.getElementById(totalElId).textContent = total.toLocaleString(); }; renderSummary(period1, 'summary-period1', 'total-period1'); renderSummary(period2, 'summary-period2', 'total-period2'); }
         function showDeleteModal() { if (!selectedDate) { alert('กรุณาเลือกวันที่ต้องการลบ'); return; } const modal = document.getElementById('delete-modal'); const localDate = new Date(selectedDate + 'T00:00:00'); modal.querySelector('#delete-date-confirm').textContent = localDate.toLocaleDateString('th-TH'); modal.style.display = 'block'; }
         function hideDeleteModal() { document.getElementById('delete-modal').style.display = 'none'; }
         function showPriceModal() { const modal = document.getElementById('price-modal'); const body = modal.querySelector('#price-modal-body'); body.innerHTML = ''; for (const key in jobPrices) { const job = jobPrices[key]; let inputHtml = ''; if (Array.isArray(job.price)) { inputHtml = job.price.map((p, i) => `<input type="number" id="price-input-${key}-${i}" value="${p}" class="w-20 input-field rounded p-1 text-center">`).join(' '); inputHtml = `<div class="flex items-center gap-2">เที่ยวที่ 1-3: ${inputHtml}</div>`; } else { inputHtml = `<input type="number" id="price-input-${key}" value="${job.price}" class="w-24 input-field rounded p-1 text-center">`; } const deleteBtn = job.isDefault ? '' : `<button data-key="${key}" class="delete-job-btn text-red-500 hover:text-red-400">ลบ</button>`; body.innerHTML += `<div class="flex justify-between items-center gap-2"><label class="font-medium">${job.name}:</label><div class="flex items-center gap-2">${inputHtml} ${deleteBtn}</div></div>`; } modal.style.display = 'block'; }
@@ -552,9 +603,9 @@
         chartYearSelect.addEventListener('change', renderIncomeChart);
         chartMonthSelect.addEventListener('change', renderIncomeChart);
         themeToggleBtn.addEventListener('click', () => {
-            const isDark = !document.documentElement.classList.contains('light-mode');
-            localStorage.setItem('darkMode', !isDark);
-            applyTheme(!isDark);
+            const isCurrentlyLight = document.documentElement.classList.contains('light-mode');
+            localStorage.setItem('darkMode', !isCurrentlyLight);
+            applyTheme(!isCurrentlyLight);
         });
 
         // --- Main Execution ---
@@ -567,8 +618,8 @@
         }
 
         // --- Initial theme setup ---
-        const savedTheme = localStorage.getItem('darkMode') === 'true';
-        applyTheme(savedTheme);
+        const savedThemeIsDark = localStorage.getItem('darkMode') === 'true';
+        applyTheme(savedThemeIsDark);
 
     </script>
 </body>
