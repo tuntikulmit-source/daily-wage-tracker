@@ -27,6 +27,8 @@
         body { font-family: 'Kanit', sans-serif; background-color: var(--bg-primary); color: var(--text-primary); transition: background-color 0.3s, color 0.3s; }
         .card { background-color: var(--bg-secondary); border: 1px solid var(--border-color); }
         .input-field { background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); }
+        .input-field:disabled { background-color: #4b5563; color: #9ca3af; cursor: not-allowed; }
+        html.light-mode .input-field:disabled { background-color: #e5e7eb; color: #9ca3af; }
         .stepper-input { background-color: var(--bg-tertiary); border: 1px solid var(--border-color); }
         .table-header { background-color: var(--bg-tertiary); }
         .table-row { border-bottom: 1px solid var(--border-color); }
@@ -36,8 +38,12 @@
         .calendar-day:hover { transform: scale(1.05); background-color: var(--bg-tertiary); }
         .selected-day { background-color: #3b82f6; color: white !important; border-radius: 50%; }
         .work-day { background-color: #16a34a; color: white !important; border-radius: 50%; }
+        .force-day { background-color: #a7d7f9; color: #1f2937 !important; border-radius: 50%; }
+        .tradition-day { background-color: #fcd34d; color: #1f2937 !important; border-radius: 50%; }
         .today { border: 2px solid #f59e0b; border-radius: 50%; }
         .shift-icon { position: absolute; top: 2px; right: 2px; font-size: 0.6rem; }
+        .multiplier-icon { position: absolute; bottom: 2px; left: 3px; font-size: 0.6rem; font-weight: bold; color: var(--bg-secondary); }
+        html.light-mode .multiplier-icon { color: white; }
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); align-items: center; justify-content: center;}
         .modal-content { padding: 1.5rem; border-radius: 0.5rem; width: 90%; max-width: 500px; }
         input[type="number"]::-webkit-inner-spin-button,
@@ -45,9 +51,7 @@
         input[type="number"] { -moz-appearance: textfield; }
         .stepper-input { width: 60px; text-align: center; border-radius: 0.375rem; }
         .stepper-btn { width: 36px; height: 36px; font-size: 1.25rem; line-height: 1; }
-        .shift-selected {
-            box-shadow: 0 0 0 3px var(--ring-offset-color), 0 0 0 5px #3b82f6;
-        }
+        .btn-selected { box-shadow: 0 0 0 3px var(--ring-offset-color), 0 0 0 5px #3b82f6; }
     </style>
 </head>
 <body class="p-2 sm:p-4">
@@ -85,9 +89,16 @@
             <!-- Data Entry Form -->
             <div class="card p-4 rounded-lg shadow-lg mb-4">
                 <h3 class="text-lg font-semibold mb-3">บันทึกข้อมูลสำหรับวันที่: <span id="selected-date-display" class="text-blue-400"></span></h3>
-                <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <button id="day-shift-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded-lg transition">☀️ กะเช้า</button>
                     <button id="night-shift-btn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition">🌙 กะดึก</button>
+                    <button id="force-day-btn" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-lg transition"> Forced Day Off</button>
+                    <button id="tradition-day-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition"> Holiday</button>
+                </div>
+                 <div class="grid grid-cols-3 gap-4 mb-4">
+                    <button id="pay-1x-btn" data-multiplier="1" class="pay-multiplier-btn w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">1x ปกติ</button>
+                    <button id="pay-2x-btn" data-multiplier="2" class="pay-multiplier-btn w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition">2x สองแรง</button>
+                    <button id="pay-3x-btn" data-multiplier="3" class="pay-multiplier-btn w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2 px-4 rounded-lg transition">3x สามแรง</button>
                 </div>
                 <div class="border-b pb-4 mb-4" style="border-color: var(--border-color);">
                     <h4 class="text-lg font-semibold mb-3">รายรับพื้นฐานและเที่ยววิ่ง</h4>
@@ -293,6 +304,9 @@
         // --- App Constants ---
         let otPreRate = 70;
         let otPostRate = 35;
+        const BASE_WAGE = 372;
+        const FORCE_WAGE = 298;
+        const TRADITION_WAGE = 372;
         const SPECIAL_FOOD_ALLOWANCE = 25;
         const DILIGENCE_STEPS = [0, 300, 350, 400, 450, 500, 550, 600];
 
@@ -311,6 +325,7 @@
         };
         let jobPrices = { ...defaultJobPrices };
         let shift = 'day';
+        let payMultiplier = 1;
         let incomeChart;
 
         // --- DOM Elements ---
@@ -725,12 +740,29 @@
                     dayEl.classList.add('text-purple-500', 'font-semibold');
                 }
 
-                if (monthlyData[dateStr]) {
-                    dayEl.classList.add('work-day');
-                    const shiftIcon = document.createElement('span');
-                    shiftIcon.className = 'shift-icon';
-                    shiftIcon.textContent = monthlyData[dateStr].shift === 'night' ? '🌙' : '☀️';
-                    dayEl.appendChild(shiftIcon);
+                const data = monthlyData[dateStr];
+                if (data) {
+                    if (data.shift === 'force') {
+                        dayEl.classList.add('force-day');
+                    } else if (data.shift === 'tradition') {
+                        dayEl.classList.add('tradition-day');
+                    } else {
+                        dayEl.classList.add('work-day');
+                    }
+                    
+                    if (data.shift !== 'force' && data.shift !== 'tradition') {
+                        const shiftIcon = document.createElement('span');
+                        shiftIcon.className = 'shift-icon';
+                        shiftIcon.textContent = data.shift === 'night' ? '🌙' : '☀️';
+                        dayEl.appendChild(shiftIcon);
+                    }
+                    
+                    if (data.payMultiplier && data.payMultiplier > 1) {
+                         const multiplierIcon = document.createElement('span');
+                         multiplierIcon.className = 'multiplier-icon';
+                         multiplierIcon.textContent = `x${data.payMultiplier}`;
+                         dayEl.appendChild(multiplierIcon);
+                    }
                 }
                 if (dateStr === todayStr) {
                     dayEl.classList.add('today');
@@ -765,6 +797,9 @@
             clearForm();
             const data = allTimeData[dateStr];
             if (data) {
+                shift = data.shift || 'day';
+                payMultiplier = data.payMultiplier || 1;
+
                 inputIds.forEach(id => { if (data[id] != null) inputs[id].value = data[id]; });
                 
                 diligenceInput.value = data.diligence_allowance || 0;
@@ -775,19 +810,74 @@
                 otPostHoursInput.value = postHours;
 
                 for (const key in jobPrices) { const inputEl = document.getElementById(`job-${key}`); if (inputEl && data[`job_${key}`] != null) inputEl.value = data[`job_${key}`]; }
-                shift = data.shift || 'day';
+                
             } else {
-                setDefaults();
                 shift = 'day';
+                payMultiplier = 1;
+                setDefaults();
             }
-            updateShiftButtons();
+            updatePrimaryButtonsUI();
+            calculateAndApplyValues();
             updateAllJobTotals();
+        }
+        function clearForm() { 
+            inputIds.forEach(id => inputs[id].value = ''); 
+            otPreHoursInput.value = 0; 
+            otPostHoursInput.value = 0; 
+            diligenceInput.value = 0; 
+            document.querySelectorAll('.job-input').forEach(input => input.value = ''); 
+            shift = 'day'; 
+            payMultiplier = 1;
+            updatePrimaryButtonsUI();
+            calculateAndApplyValues();
+            updateAllJobTotals();
+        }
+        function setDefaults() { 
+            inputs.travel.value = 60; 
+            inputs.food.value = 50; 
+        }
+        
+        function updatePrimaryButtonsUI() {
+            document.querySelectorAll('.grid button[id$="-btn"]').forEach(btn => btn.classList.remove('btn-selected'));
+            document.getElementById(`${shift}-day-btn`)?.classList.add('btn-selected');
+            document.querySelector(`.pay-multiplier-btn[data-multiplier="${payMultiplier}"]`)?.classList.add('btn-selected');
+        }
+
+        function calculateAndApplyValues() {
+            const isSpecialDay = shift === 'force' || shift === 'tradition';
+
+            // Set wage based on type
+            if (shift === 'force') {
+                inputs.wage.value = FORCE_WAGE;
+            } else if (shift === 'tradition') {
+                inputs.wage.value = TRADITION_WAGE;
+            } else {
+                inputs.wage.value = BASE_WAGE * payMultiplier;
+            }
+
+            // Enable/disable fields
+            const fieldsToToggle = [inputs.travel, inputs.food, inputs.night_shift_allowance, otPreHoursInput, otPostHoursInput];
+            fieldsToToggle.forEach(field => field.disabled = isSpecialDay);
+            document.querySelectorAll('.pay-multiplier-btn, #ot-pre-plus, #ot-pre-minus, #ot-post-plus, #ot-post-minus').forEach(btn => btn.disabled = isSpecialDay);
+
+            if (isSpecialDay) {
+                inputs.travel.value = '';
+                inputs.food.value = '';
+                inputs.night_shift_allowance.value = '';
+                otPreHoursInput.value = 0;
+                otPostHoursInput.value = 0;
+            } else {
+                if (!inputs.travel.value) inputs.travel.value = 60;
+                if (!inputs.food.value) inputs.food.value = 50;
+                if (shift === 'night' && !inputs.night_shift_allowance.value) {
+                    inputs.night_shift_allowance.value = 100;
+                } else if (shift === 'day') {
+                    inputs.night_shift_allowance.value = '';
+                }
+            }
             updateOTUI();
         }
-        function clearForm() { inputIds.forEach(id => inputs[id].value = ''); otPreHoursInput.value = 0; otPostHoursInput.value = 0; diligenceInput.value = 0; document.querySelectorAll('.job-input').forEach(input => input.value = ''); shift = 'day'; updateShiftButtons(); updateAllJobTotals(); updateOTUI(); }
-        function setDefaults() { inputs.wage.value = 372; inputs.travel.value = 60; inputs.food.value = 50; }
-        function updateShiftButtons() { const dayBtn = document.getElementById('day-shift-btn'); const nightBtn = document.getElementById('night-shift-btn'); dayBtn.classList.remove('shift-selected'); nightBtn.classList.remove('shift-selected'); if (shift === 'day') { dayBtn.classList.add('shift-selected'); inputs.night_shift_allowance.value = ''; } else { nightBtn.classList.add('shift-selected'); inputs.night_shift_allowance.value = 100; } }
-        
+
         function updateOTUI() {
             const preHours = parseFloat(otPreHoursInput.value) || 0;
             const postHours = parseFloat(otPostHoursInput.value) || 0;
@@ -818,7 +908,7 @@
 
         async function saveData() {
             if (!selectedDate) { alert('กรุณาเลือกวันที่ก่อนบันทึก'); return; }
-            const data = { shift };
+            const data = { shift, payMultiplier };
             let hasValue = false;
             
             inputIds.forEach(id => { const value = inputs[id].type === 'number' ? parseFloat(inputs[id].value) : inputs[id].value; if (inputs[id].value.trim() !== '') { data[id] = isNaN(value) ? inputs[id].value : value; hasValue = true; } else { data[id] = null; } });
@@ -909,8 +999,20 @@
             document.getElementById('save-new-job-btn').addEventListener('click', handleAddNewJobFromModal);
             document.getElementById('cancel-new-job-btn').addEventListener('click', () => { document.getElementById('add-job-modal').style.display = 'none'; });
             document.getElementById('price-modal').querySelector('#price-modal-body').addEventListener('click', e => { if (e.target.classList.contains('delete-job-btn')) { const key = e.target.dataset.key; if (key && confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบประเภทงาน "${jobPrices[key].name}"?`)) { delete jobPrices[key]; showPriceModal(); } } });
-            document.getElementById('day-shift-btn').addEventListener('click', () => { shift = 'day'; updateShiftButtons(); });
-            document.getElementById('night-shift-btn').addEventListener('click', () => { shift = 'night'; updateShiftButtons(); });
+            
+            document.getElementById('day-shift-btn').addEventListener('click', () => { shift = 'day'; updatePrimaryButtonsUI(); calculateAndApplyValues(); });
+            document.getElementById('night-shift-btn').addEventListener('click', () => { shift = 'night'; updatePrimaryButtonsUI(); calculateAndApplyValues(); });
+            document.getElementById('force-day-btn').addEventListener('click', () => { shift = 'force'; payMultiplier = 1; updatePrimaryButtonsUI(); calculateAndApplyValues(); });
+            document.getElementById('tradition-day-btn').addEventListener('click', () => { shift = 'tradition'; payMultiplier = 1; updatePrimaryButtonsUI(); calculateAndApplyValues(); });
+            
+            document.querySelectorAll('.pay-multiplier-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (shift === 'force' || shift === 'tradition') return;
+                    payMultiplier = parseInt(btn.dataset.multiplier);
+                    updatePrimaryButtonsUI();
+                    calculateAndApplyValues();
+                });
+            });
             specialJobsContainer.addEventListener('click', e => { const input = e.target.closest('div').querySelector('.job-input'); if (!input) return; const step = parseFloat(input.dataset.step) || 1; let value = parseFloat(input.value) || 0; if (e.target.classList.contains('plus-btn')) value += step; if (e.target.classList.contains('minus-btn')) value -= step; input.value = Math.max(0, value); updateAllJobTotals(); });
             specialJobsContainer.addEventListener('input', e => { if (e.target.classList.contains('job-input')) updateAllJobTotals(); });
             document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
