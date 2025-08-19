@@ -112,8 +112,26 @@
                 <div class="mb-4">
                     <h4 class="text-lg font-semibold mb-3">รายรับอื่นๆ</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label>โอที (ก่อนงาน): <input id="ot_pre" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
-                        <div><label>โอที (หลังงาน): <input id="ot_post" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
+                        <!-- OT Pre Input -->
+                        <div class="card p-2 rounded-lg">
+                            <label class="font-medium text-secondary">โอที (ก่อนงาน) <span class="text-xs">(ระบุเป็นชั่วโมง)</span></label>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <button id="ot-pre-minus" class="stepper-btn minus-btn bg-red-600 hover:bg-red-700 rounded-full text-white font-bold transition">-</button>
+                                <input type="number" id="ot_pre_hours" class="stepper-input p-1" value="0" step="1" min="0">
+                                <button id="ot-pre-plus" class="stepper-btn plus-btn bg-green-600 hover:bg-green-700 rounded-full text-white font-bold transition">+</button>
+                                <span id="ot-pre-total" class="w-20 text-right text-green-400 font-semibold">0 ฿</span>
+                            </div>
+                        </div>
+                        <!-- OT Post Input -->
+                        <div class="card p-2 rounded-lg">
+                            <label class="font-medium text-secondary">โอที (หลังงาน) <span class="text-xs">(ระบุเป็นชั่วโมง)</span></label>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <button id="ot-post-minus" class="stepper-btn minus-btn bg-red-600 hover:bg-red-700 rounded-full text-white font-bold transition">-</button>
+                                <input type="number" id="ot_post_hours" class="stepper-input p-1" value="0" step="1" min="0">
+                                <button id="ot-post-plus" class="stepper-btn plus-btn bg-green-600 hover:bg-green-700 rounded-full text-white font-bold transition">+</button>
+                                <span id="ot-post-total" class="w-20 text-right text-green-400 font-semibold">0 ฿</span>
+                            </div>
+                        </div>
                         <div><label>ค่าอาหารพิเศษ: <input id="special_food" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
                         <div><label>ค่ากะดึก: <input id="night_shift_allowance" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
                         <div><label>เบี้ยขยัน: <input id="diligence_allowance" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
@@ -233,6 +251,11 @@
         auth = getAuth(app);
         db = getFirestore(app);
 
+        // --- App Constants ---
+        const OT_PRE_RATE = 70;
+        const OT_POST_RATE = 35;
+        const SPECIAL_FOOD_ALLOWANCE = 25; // CORRECTED VALUE
+
         // --- App State ---
         let currentDate = new Date();
         let selectedDate = null;
@@ -261,9 +284,11 @@
         const monthYearEl = document.getElementById('month-year');
         const selectedDateDisplay = document.getElementById('selected-date-display');
         const specialJobsContainer = document.getElementById('special-jobs-container');
-        const inputIds = ['wage', 'travel', 'food', 'ot_pre', 'ot_post', 'special_food', 'night_shift_allowance', 'diligence_allowance', 'vehicle1', 'vehicle2'];
+        const inputIds = ['wage', 'travel', 'food', 'special_food', 'night_shift_allowance', 'diligence_allowance', 'vehicle1', 'vehicle2'];
         const inputs = inputIds.reduce((acc, id) => ({ ...acc, [id]: document.getElementById(id) }), {});
-
+        const otPreHoursInput = document.getElementById('ot_pre_hours');
+        const otPostHoursInput = document.getElementById('ot_post_hours');
+        
         // --- Dark Mode ---
         function applyTheme(isDark) {
             const root = document.documentElement;
@@ -348,14 +373,10 @@
                 const tempData = { wages: {}, settings: settingsSnap.exists() ? settingsSnap.data() : null };
                 wagesSnapshot.forEach(doc => { tempData.wages[doc.id] = doc.data(); });
 
-                errorEl.textContent = 'กำลังออกจากระบบชั่วคราว...';
                 await signOut(auth);
-
-                errorEl.textContent = 'กำลังเข้าสู่ระบบ...';
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const permanentUid = userCredential.user.uid;
                 
-                errorEl.textContent = 'กำลังรวมข้อมูล...';
                 if (Object.keys(tempData.wages).length > 0 || tempData.settings) {
                     const batch = writeBatch(db);
                     for (const date in tempData.wages) {
@@ -372,6 +393,7 @@
                 alert('เข้าสู่ระบบและรวมข้อมูลสำเร็จ!');
                 document.getElementById('auth-modal').style.display = 'none';
             } catch (error) {
+                errorEl.className = 'mb-3 text-sm text-red-400';
                 if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                     errorEl.textContent = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
                 } else {
@@ -396,6 +418,7 @@
                 alert('เชื่อมต่อบัญชีสำเร็จ!');
                 document.getElementById('auth-modal').style.display = 'none';
             } catch (error) {
+                 errorEl.className = 'mb-3 text-sm text-red-400';
                 if (error.code === 'auth/email-already-in-use') {
                     errorEl.textContent = 'อีเมลนี้ถูกใช้แล้ว กรุณาเลือก "เข้าสู่ระบบ"';
                 } else if (error.code === 'auth/weak-password') {
@@ -591,13 +614,92 @@
         function generateCalendar(year, month) { calendarEl.innerHTML = ''; monthYearEl.textContent = `${new Date(year, month).toLocaleString('th-TH', { month: 'long' })} ${year + 543}`; const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate(); const todayObj = new Date(); const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`; for (let i = 0; i < firstDay; i++) calendarEl.appendChild(document.createElement('div')); for (let day = 1; day <= daysInMonth; day++) { const dayEl = document.createElement('div'); dayEl.textContent = day; const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; dayEl.dataset.date = dateStr; dayEl.className = 'p-2 text-center cursor-pointer calendar-day aspect-square flex items-center justify-center'; if (monthlyData[dateStr]) { dayEl.classList.add('work-day'); const shiftIcon = document.createElement('span'); shiftIcon.className = 'shift-icon'; shiftIcon.textContent = monthlyData[dateStr].shift === 'night' ? '🌙' : '☀️'; dayEl.appendChild(shiftIcon); } if (dateStr === todayStr) dayEl.classList.add('today'); if (selectedDate && dateStr === selectedDate) dayEl.classList.add('selected-day'); dayEl.addEventListener('click', () => selectDate(dateStr)); calendarEl.appendChild(dayEl); } }
         function selectDate(dateStr) { selectedDate = dateStr; const localDate = new Date(dateStr + 'T00:00:00'); selectedDateDisplay.textContent = localDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }); loadDataForDate(dateStr); updateCalendarHighlights(); }
         function updateCalendarHighlights() { document.querySelectorAll('.calendar-day').forEach(el => { el.classList.remove('selected-day'); if (el.dataset.date === selectedDate) el.classList.add('selected-day'); }); }
-        async function loadDataForDate(dateStr) { clearForm(); const data = allTimeData[dateStr]; if (data) { inputIds.forEach(id => { if (data[id] != null) inputs[id].value = data[id]; }); for (const key in jobPrices) { const inputEl = document.getElementById(`job-${key}`); if (inputEl && data[`job_${key}`] != null) inputEl.value = data[`job_${key}`]; } shift = data.shift || 'day'; } else { setDefaults(); shift = 'day'; } updateShiftButtons(); updateAllJobTotals(); }
-        function clearForm() { inputIds.forEach(id => inputs[id].value = ''); document.querySelectorAll('.job-input').forEach(input => input.value = ''); shift = 'day'; updateShiftButtons(); updateAllJobTotals(); }
+        async function loadDataForDate(dateStr) {
+            clearForm();
+            const data = allTimeData[dateStr];
+            if (data) {
+                inputIds.forEach(id => { if (data[id] != null) inputs[id].value = data[id]; });
+                
+                // Compatibility for OT data
+                const preHours = data.ot_pre_hours ?? (data.ot_pre ? data.ot_pre / OT_PRE_RATE : 0);
+                const postHours = data.ot_post_hours ?? (data.ot_post ? data.ot_post / OT_POST_RATE : 0);
+                otPreHoursInput.value = preHours;
+                otPostHoursInput.value = postHours;
+
+                for (const key in jobPrices) { const inputEl = document.getElementById(`job-${key}`); if (inputEl && data[`job_${key}`] != null) inputEl.value = data[`job_${key}`]; }
+                shift = data.shift || 'day';
+            } else {
+                setDefaults();
+                shift = 'day';
+            }
+            updateShiftButtons();
+            updateAllJobTotals();
+            updateOTUI();
+        }
+        function clearForm() { inputIds.forEach(id => inputs[id].value = ''); otPreHoursInput.value = 0; otPostHoursInput.value = 0; document.querySelectorAll('.job-input').forEach(input => input.value = ''); shift = 'day'; updateShiftButtons(); updateAllJobTotals(); updateOTUI(); }
         function setDefaults() { inputs.wage.value = 372; inputs.travel.value = 60; inputs.food.value = 50; }
         function updateShiftButtons() { const dayBtn = document.getElementById('day-shift-btn'); const nightBtn = document.getElementById('night-shift-btn'); dayBtn.classList.remove('shift-selected'); nightBtn.classList.remove('shift-selected'); if (shift === 'day') { dayBtn.classList.add('shift-selected'); inputs.night_shift_allowance.value = ''; } else { nightBtn.classList.add('shift-selected'); inputs.night_shift_allowance.value = 100; } }
-        async function saveData() { if (!selectedDate) { alert('กรุณาเลือกวันที่ก่อนบันทึก'); return; } const data = { shift }; let hasValue = false; inputIds.forEach(id => { const value = inputs[id].type === 'number' ? parseFloat(inputs[id].value) : inputs[id].value; if (inputs[id].value.trim() !== '') { data[id] = isNaN(value) ? inputs[id].value : value; hasValue = true; } else { data[id] = null; } }); document.querySelectorAll('.job-input').forEach(input => { const key = input.dataset.jobKey; const value = parseFloat(input.value); if (!isNaN(value) && value > 0) { data[`job_${key}`] = value; hasValue = true; } else { data[`job_${key}`] = null; } }); if (!hasValue) { alert('ไม่มีข้อมูลให้บันทึก'); return; } const docRef = doc(db, `artifacts/${appId}/users/${userId}/wages`, selectedDate); try { await setDoc(docRef, data); console.log("บันทึกข้อมูลสำเร็จ!"); clearForm(); setDefaults(); } catch (error) { console.error("เกิดข้อผิดพลาดในการบันทึก: ", error); } }
+        
+        function updateOTUI() {
+            const preHours = parseFloat(otPreHoursInput.value) || 0;
+            const postHours = parseFloat(otPostHoursInput.value) || 0;
+            
+            document.getElementById('ot-pre-total').textContent = `${(preHours * OT_PRE_RATE).toLocaleString()} ฿`;
+            document.getElementById('ot-post-total').textContent = `${(postHours * OT_POST_RATE).toLocaleString()} ฿`;
+
+            // CORRECTED: Auto-add/remove special food allowance
+            if (postHours >= 2 && (!inputs.special_food.value || parseFloat(inputs.special_food.value) === 0)) {
+                inputs.special_food.value = SPECIAL_FOOD_ALLOWANCE;
+            } else if (postHours < 2 && parseFloat(inputs.special_food.value) === SPECIAL_FOOD_ALLOWANCE) {
+                // If user reduces hours, remove the auto-added allowance
+                inputs.special_food.value = '';
+            }
+        }
+
+        async function saveData() {
+            if (!selectedDate) { alert('กรุณาเลือกวันที่ก่อนบันทึก'); return; }
+            const data = { shift };
+            let hasValue = false;
+            
+            // Standard inputs
+            inputIds.forEach(id => { const value = inputs[id].type === 'number' ? parseFloat(inputs[id].value) : inputs[id].value; if (inputs[id].value.trim() !== '') { data[id] = isNaN(value) ? inputs[id].value : value; hasValue = true; } else { data[id] = null; } });
+            
+            // OT inputs
+            const preHours = parseFloat(otPreHoursInput.value) || 0;
+            const postHours = parseFloat(otPostHoursInput.value) || 0;
+            if (preHours > 0) {
+                data.ot_pre_hours = preHours;
+                data.ot_pre = preHours * OT_PRE_RATE;
+                hasValue = true;
+            } else {
+                data.ot_pre_hours = null; data.ot_pre = null;
+            }
+            if (postHours > 0) {
+                data.ot_post_hours = postHours;
+                data.ot_post = postHours * OT_POST_RATE;
+                hasValue = true;
+            } else {
+                data.ot_post_hours = null; data.ot_post = null;
+            }
+
+            // Special jobs
+            document.querySelectorAll('.job-input').forEach(input => { const key = input.dataset.jobKey; const value = parseFloat(input.value); if (!isNaN(value) && value > 0) { data[`job_${key}`] = value; hasValue = true; } else { data[`job_${key}`] = null; } });
+            
+            if (!hasValue) { alert('ไม่มีข้อมูลให้บันทึก'); return; }
+            
+            const docRef = doc(db, `artifacts/${appId}/users/${userId}/wages`, selectedDate);
+            try {
+                await setDoc(docRef, data);
+                console.log("บันทึกข้อมูลสำเร็จ!");
+                clearForm();
+                setDefaults();
+            } catch (error) {
+                console.error("เกิดข้อผิดพลาดในการบันทึก: ", error);
+                alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+            }
+        }
         async function deleteData() { if (!selectedDate) return; const docRef = doc(db, `artifacts/${appId}/users/${userId}/wages`, selectedDate); try { await deleteDoc(docRef); console.log("ลบข้อมูลสำเร็จ!"); clearForm(); setDefaults(); hideDeleteModal(); } catch (error) { console.error("เกิดข้อผิดพลาดในการลบ: ", error); hideDeleteModal(); } }
-        function updateSummariesAndTable() { const period1 = {}; const period2 = {}; const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'OT ก่อน', ot_post: 'OT หลัง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' }; const table = document.getElementById('details-table'); const thead = table.querySelector('thead'); const tableBody = table.querySelector('tbody'); tableBody.innerHTML = ''; thead.innerHTML = ''; const headerRow = document.createElement('tr'); const staticHeaders = ['วันที่', 'กะ', 'เบอร์รถ', 'รวม']; staticHeaders.forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); Object.values(incomeLabels).forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); Object.values(jobPrices).forEach(job => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = job.name; headerRow.appendChild(th); }); thead.appendChild(headerRow); Object.entries(monthlyData).sort(([dateA], [dateB]) => dateA.localeCompare(dateB)).forEach(([dateStr, data]) => { const localDate = new Date(dateStr + 'T00:00:00'); const day = localDate.getDate(); const targetPeriod = day <= 15 ? period1 : period2; let dailyTotal = 0; for(const key in incomeLabels) { const value = parseFloat(data[key]) || 0; if(value > 0) { targetPeriod[key] = (targetPeriod[key] || 0) + value; dailyTotal += value; } } for (const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; if (count > 0) { let jobTotal = 0; if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } dailyTotal += jobTotal; const periodKey = `job_${key}`; targetPeriod[periodKey] = (targetPeriod[periodKey] || 0) + jobTotal; } } const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ') || '-'; const row = document.createElement('tr'); row.className = 'table-row hover:bg-tertiary'; row.innerHTML = `<td class="px-3 py-2">${localDate.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</td><td class="px-3 py-2">${data.shift === 'night' ? '🌙' : '☀️'}</td><td class="px-3 py-2 text-purple-400 font-semibold">${vehicleText}</td><td class="px-3 py-2 font-bold text-green-400">${dailyTotal.toLocaleString()}</td>`; for(const key in incomeLabels) { row.innerHTML += `<td class="px-3 py-2">${(parseFloat(data[key]) || 0).toLocaleString()}</td>`; } for(const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; let jobTotal = 0; if (count > 0) { if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } } row.innerHTML += `<td class="px-3 py-2">${jobTotal.toLocaleString()}</td>`; } tableBody.appendChild(row); }); const renderSummary = (periodData, elId, totalElId) => { const el = document.getElementById(elId); el.innerHTML = ''; let total = 0; const sortedKeys = Object.keys(periodData).sort(); sortedKeys.forEach(key => { const value = periodData[key]; total += value; let label = incomeLabels[key]; if (key.startsWith('job_')) { const jobKey = key.substring(4); label = jobPrices[jobKey]?.name || 'งานพิเศษ'; } if (label) { el.innerHTML += `<p>${label}: <span class="float-right font-semibold">${value.toLocaleString()}</span></p>`; } }); document.getElementById(totalElId).textContent = total.toLocaleString(); }; renderSummary(period1, 'summary-period1', 'total-period1'); renderSummary(period2, 'summary-period2', 'total-period2'); }
+        function updateSummariesAndTable() { const period1 = {}; const period2 = {}; const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' }; const table = document.getElementById('details-table'); const thead = table.querySelector('thead'); const tableBody = table.querySelector('tbody'); tableBody.innerHTML = ''; thead.innerHTML = ''; const headerRow = document.createElement('tr'); const staticHeaders = ['วันที่', 'กะ', 'เบอร์รถ', 'รวม']; staticHeaders.forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); Object.values(incomeLabels).forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); ['OT ก่อน', 'OT หลัง'].forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); Object.values(jobPrices).forEach(job => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = job.name; headerRow.appendChild(th); }); thead.appendChild(headerRow); Object.entries(monthlyData).sort(([dateA], [dateB]) => dateA.localeCompare(dateB)).forEach(([dateStr, data]) => { const localDate = new Date(dateStr + 'T00:00:00'); const day = localDate.getDate(); const targetPeriod = day <= 15 ? period1 : period2; let dailyTotal = 0; for(const key in incomeLabels) { const value = parseFloat(data[key]) || 0; if(value > 0) { targetPeriod[key] = (targetPeriod[key] || 0) + value; dailyTotal += value; } } const otPreVal = parseFloat(data.ot_pre) || 0; const otPostVal = parseFloat(data.ot_post) || 0; const otPreHoursVal = parseFloat(data.ot_pre_hours) || 0; const otPostHoursVal = parseFloat(data.ot_post_hours) || 0; if (otPreVal > 0) { dailyTotal += otPreVal; if (!targetPeriod.ot_pre) targetPeriod.ot_pre = { hours: 0, amount: 0 }; targetPeriod.ot_pre.hours += otPreHoursVal || (otPreVal / OT_PRE_RATE); targetPeriod.ot_pre.amount += otPreVal; } if (otPostVal > 0) { dailyTotal += otPostVal; if (!targetPeriod.ot_post) targetPeriod.ot_post = { hours: 0, amount: 0 }; targetPeriod.ot_post.hours += otPostHoursVal || (otPostVal / OT_POST_RATE); targetPeriod.ot_post.amount += otPostVal; } for (const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; if (count > 0) { let jobTotal = 0; if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } dailyTotal += jobTotal; const periodKey = `job_${key}`; targetPeriod[periodKey] = (targetPeriod[periodKey] || 0) + jobTotal; } } const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ') || '-'; const row = document.createElement('tr'); row.className = 'table-row hover:bg-tertiary'; row.innerHTML = `<td class="px-3 py-2">${localDate.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</td><td class="px-3 py-2">${data.shift === 'night' ? '🌙' : '☀️'}</td><td class="px-3 py-2 text-purple-400 font-semibold">${vehicleText}</td><td class="px-3 py-2 font-bold text-green-400">${dailyTotal.toLocaleString()}</td>`; for(const key in incomeLabels) { row.innerHTML += `<td class="px-3 py-2">${(parseFloat(data[key]) || 0).toLocaleString()}</td>`; } row.innerHTML += `<td class="px-3 py-2">${otPreVal.toLocaleString()}</td>`; row.innerHTML += `<td class="px-3 py-2">${otPostVal.toLocaleString()}</td>`; for(const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; let jobTotal = 0; if (count > 0) { if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } } row.innerHTML += `<td class="px-3 py-2">${jobTotal.toLocaleString()}</td>`; } tableBody.appendChild(row); }); const renderSummary = (periodData, elId, totalElId) => { const el = document.getElementById(elId); el.innerHTML = ''; let total = 0; const sortedKeys = Object.keys(periodData).sort(); sortedKeys.forEach(key => { const value = periodData[key]; let label = incomeLabels[key]; let amount = 0; if (key === 'ot_pre' || key === 'ot_post') { label = key === 'ot_pre' ? `OT ก่อน (${value.hours.toFixed(1)} ชม.)` : `OT หลัง (${value.hours.toFixed(1)} ชม.)`; amount = value.amount; } else if (key.startsWith('job_')) { const jobKey = key.substring(4); label = jobPrices[jobKey]?.name || 'งานพิเศษ'; amount = value; } else { amount = value; } total += amount; if (label) { el.innerHTML += `<p>${label}: <span class="float-right font-semibold">${amount.toLocaleString()}</span></p>`; } }); document.getElementById(totalElId).textContent = total.toLocaleString(); }; renderSummary(period1, 'summary-period1', 'total-period1'); renderSummary(period2, 'summary-period2', 'total-period2'); }
         function showDeleteModal() { if (!selectedDate) { alert('กรุณาเลือกวันที่ต้องการลบ'); return; } const modal = document.getElementById('delete-modal'); const localDate = new Date(selectedDate + 'T00:00:00'); modal.querySelector('#delete-date-confirm').textContent = localDate.toLocaleDateString('th-TH'); modal.style.display = 'flex'; }
         function hideDeleteModal() { document.getElementById('delete-modal').style.display = 'none'; }
         function showPriceModal() { const modal = document.getElementById('price-modal'); const body = modal.querySelector('#price-modal-body'); body.innerHTML = ''; for (const key in jobPrices) { const job = jobPrices[key]; let inputHtml = ''; if (Array.isArray(job.price)) { inputHtml = job.price.map((p, i) => `<input type="number" id="price-input-${key}-${i}" value="${p}" class="w-20 input-field rounded p-1 text-center">`).join(' '); inputHtml = `<div class="flex items-center gap-2">เที่ยวที่ 1-3: ${inputHtml}</div>`; } else { inputHtml = `<input type="number" id="price-input-${key}" value="${job.price}" class="w-24 input-field rounded p-1 text-center">`; } const deleteBtn = job.isDefault ? '' : `<button data-key="${key}" class="delete-job-btn text-red-500 hover:text-red-400">ลบ</button>`; body.innerHTML += `<div class="flex justify-between items-center gap-2"><label class="font-medium">${job.name}:</label><div class="flex items-center gap-2">${inputHtml} ${deleteBtn}</div></div>`; } modal.style.display = 'flex'; }
@@ -607,35 +709,38 @@
         function exportToPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF({orientation: 'landscape'}); const monthName = monthYearEl.textContent; doc.addFileToVFS('Sarabun-Regular-normal.ttf', font); doc.addFont('Sarabun-Regular-normal.ttf', 'Sarabun-Regular', 'normal'); doc.setFont('Sarabun-Regular'); doc.text(`สรุปค่าจ้างเดือน ${monthName}`, 14, 16); doc.autoTable({ html: '#details-table', startY: 22, theme: 'grid', headStyles: { font: 'Sarabun-Regular', fillColor: [41, 128, 185] }, bodyStyles: { font: 'Sarabun-Regular' } }); doc.save(`สรุปค่าจ้าง-${monthName}.pdf`); }
         
         // --- Event Listeners ---
-        document.getElementById('prev-month').addEventListener('click', () => changeMonth(-1));
-        document.getElementById('next-month').addEventListener('click', () => changeMonth(1));
-        document.getElementById('save-btn').addEventListener('click', saveData);
-        document.getElementById('delete-btn').addEventListener('click', showDeleteModal);
-        document.getElementById('confirm-delete-btn').addEventListener('click', deleteData);
-        document.getElementById('cancel-delete-btn').addEventListener('click', hideDeleteModal);
-        document.getElementById('edit-prices-btn').addEventListener('click', showPriceModal);
-        document.getElementById('save-prices-btn').addEventListener('click', saveJobPrices);
-        document.getElementById('cancel-prices-btn').addEventListener('click', hidePriceModal);
-        document.getElementById('add-job-type-btn').addEventListener('click', addNewJobType);
-        document.getElementById('add-job-type-in-modal-btn').addEventListener('click', addNewJobType);
-        document.getElementById('price-modal').querySelector('#price-modal-body').addEventListener('click', e => { if (e.target.classList.contains('delete-job-btn')) { const key = e.target.dataset.key; if (key && confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบประเภทงาน "${jobPrices[key].name}"?`)) { delete jobPrices[key]; showPriceModal(); } } });
-        document.getElementById('day-shift-btn').addEventListener('click', () => { shift = 'day'; updateShiftButtons(); });
-        document.getElementById('night-shift-btn').addEventListener('click', () => { shift = 'night'; updateShiftButtons(); });
-        specialJobsContainer.addEventListener('click', e => { const input = e.target.closest('div').querySelector('.job-input'); if (!input) return; const step = parseFloat(input.dataset.step) || 1; let value = parseFloat(input.value) || 0; if (e.target.classList.contains('plus-btn')) value += step; if (e.target.classList.contains('minus-btn')) value -= step; input.value = Math.max(0, value); updateAllJobTotals(); });
-        specialJobsContainer.addEventListener('input', e => { if (e.target.classList.contains('job-input')) updateAllJobTotals(); });
-        document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
-        document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
-        document.getElementById('cancel-auth-btn').addEventListener('click', () => document.getElementById('auth-modal').style.display = 'none');
-        document.getElementById('reset-password-btn').addEventListener('click', handlePasswordReset);
-        chartYearSelect.addEventListener('change', renderIncomeChart);
-        chartMonthSelect.addEventListener('change', renderIncomeChart);
-        
-        themeToggleBtn.addEventListener('click', () => {
-            const isCurrentlyLight = document.documentElement.classList.contains('light-mode');
-            const newIsDark = isCurrentlyLight;
-            localStorage.setItem('darkMode', newIsDark);
-            applyTheme(newIsDark);
-        });
+        function setupEventListeners() {
+            document.getElementById('prev-month').addEventListener('click', () => changeMonth(-1));
+            document.getElementById('next-month').addEventListener('click', () => changeMonth(1));
+            document.getElementById('save-btn').addEventListener('click', saveData);
+            document.getElementById('delete-btn').addEventListener('click', showDeleteModal);
+            document.getElementById('confirm-delete-btn').addEventListener('click', deleteData);
+            document.getElementById('cancel-delete-btn').addEventListener('click', hideDeleteModal);
+            document.getElementById('edit-prices-btn').addEventListener('click', showPriceModal);
+            document.getElementById('save-prices-btn').addEventListener('click', saveJobPrices);
+            document.getElementById('cancel-prices-btn').addEventListener('click', hidePriceModal);
+            document.getElementById('add-job-type-btn').addEventListener('click', addNewJobType);
+            document.getElementById('add-job-type-in-modal-btn').addEventListener('click', addNewJobType);
+            document.getElementById('price-modal').querySelector('#price-modal-body').addEventListener('click', e => { if (e.target.classList.contains('delete-job-btn')) { const key = e.target.dataset.key; if (key && confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบประเภทงาน "${jobPrices[key].name}"?`)) { delete jobPrices[key]; showPriceModal(); } } });
+            document.getElementById('day-shift-btn').addEventListener('click', () => { shift = 'day'; updateShiftButtons(); });
+            document.getElementById('night-shift-btn').addEventListener('click', () => { shift = 'night'; updateShiftButtons(); });
+            specialJobsContainer.addEventListener('click', e => { const input = e.target.closest('div').querySelector('.job-input'); if (!input) return; const step = parseFloat(input.dataset.step) || 1; let value = parseFloat(input.value) || 0; if (e.target.classList.contains('plus-btn')) value += step; if (e.target.classList.contains('minus-btn')) value -= step; input.value = Math.max(0, value); updateAllJobTotals(); });
+            specialJobsContainer.addEventListener('input', e => { if (e.target.classList.contains('job-input')) updateAllJobTotals(); });
+            document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
+            document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
+            document.getElementById('cancel-auth-btn').addEventListener('click', () => document.getElementById('auth-modal').style.display = 'none');
+            document.getElementById('reset-password-btn').addEventListener('click', handlePasswordReset);
+            chartYearSelect.addEventListener('change', renderIncomeChart);
+            chartMonthSelect.addEventListener('change', renderIncomeChart);
+            themeToggleBtn.addEventListener('click', () => { const isCurrentlyLight = document.documentElement.classList.contains('light-mode'); const newIsDark = isCurrentlyLight; localStorage.setItem('darkMode', newIsDark); applyTheme(newIsDark); });
+            // OT Stepper listeners
+            document.getElementById('ot-pre-plus').addEventListener('click', () => { otPreHoursInput.stepUp(); updateOTUI(); });
+            document.getElementById('ot-pre-minus').addEventListener('click', () => { otPreHoursInput.stepDown(); updateOTUI(); });
+            otPreHoursInput.addEventListener('input', updateOTUI);
+            document.getElementById('ot-post-plus').addEventListener('click', () => { otPostHoursInput.stepUp(); updateOTUI(); });
+            document.getElementById('ot-post-minus').addEventListener('click', () => { otPostHoursInput.stepDown(); updateOTUI(); });
+            otPostHoursInput.addEventListener('input', updateOTUI);
+        }
 
         // --- Main Execution ---
         async function main() {
@@ -646,9 +751,10 @@
             selectDate(todayStr);
         }
 
-        // --- Initial theme setup ---
+        // --- Initial setup ---
         const savedThemeIsDark = localStorage.getItem('darkMode') !== 'false';
         applyTheme(savedThemeIsDark);
+        setupEventListeners();
 
     </script>
 </body>
