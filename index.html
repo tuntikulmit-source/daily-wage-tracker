@@ -117,7 +117,7 @@
                             <label class="font-medium text-secondary">โอที (ก่อนงาน) <span class="text-xs">(ระบุเป็นชั่วโมง)</span></label>
                             <div class="flex items-center space-x-2 mt-1">
                                 <button id="ot-pre-minus" class="stepper-btn minus-btn bg-red-600 hover:bg-red-700 rounded-full text-white font-bold transition">-</button>
-                                <input type="number" id="ot_pre_hours" class="stepper-input p-1" value="0" step="1" min="0">
+                                <input type="number" id="ot_pre_hours" class="stepper-input p-1" value="0" step="0.5" min="0">
                                 <button id="ot-pre-plus" class="stepper-btn plus-btn bg-green-600 hover:bg-green-700 rounded-full text-white font-bold transition">+</button>
                                 <span id="ot-pre-total" class="w-20 text-right text-green-400 font-semibold">0 ฿</span>
                             </div>
@@ -127,19 +127,33 @@
                             <label class="font-medium text-secondary">โอที (หลังงาน) <span class="text-xs">(ระบุเป็นชั่วโมง)</span></label>
                             <div class="flex items-center space-x-2 mt-1">
                                 <button id="ot-post-minus" class="stepper-btn minus-btn bg-red-600 hover:bg-red-700 rounded-full text-white font-bold transition">-</button>
-                                <input type="number" id="ot_post_hours" class="stepper-input p-1" value="0" step="1" min="0">
+                                <input type="number" id="ot_post_hours" class="stepper-input p-1" value="0" step="0.5" min="0">
                                 <button id="ot-post-plus" class="stepper-btn plus-btn bg-green-600 hover:bg-green-700 rounded-full text-white font-bold transition">+</button>
                                 <span id="ot-post-total" class="w-20 text-right text-green-400 font-semibold">0 ฿</span>
                             </div>
                         </div>
                         <div><label>ค่าอาหารพิเศษ: <input id="special_food" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
                         <div><label>ค่ากะดึก: <input id="night_shift_allowance" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
-                        <div><label>เบี้ยขยัน: <input id="diligence_allowance" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
+                         <!-- Diligence Allowance Stepper -->
+                        <div class="card p-2 rounded-lg">
+                            <label class="font-medium text-secondary">เบี้ยขยัน</label>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <button id="diligence-minus" class="stepper-btn minus-btn bg-red-600 hover:bg-red-700 rounded-full text-white font-bold transition">-</button>
+                                <input type="number" id="diligence_allowance" class="stepper-input p-1 font-semibold text-green-400" value="0" readonly>
+                                <button id="diligence-plus" class="stepper-btn plus-btn bg-green-600 hover:bg-green-700 rounded-full text-white font-bold transition">+</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="flex gap-4 mt-4">
-                    <button id="save-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">บันทึก</button>
-                    <button id="delete-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition">ลบข้อมูล</button>
+                    <button id="save-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" /></svg>
+                        บันทึก
+                    </button>
+                    <button id="delete-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                        ลบข้อมูล
+                    </button>
                 </div>
             </div>
             
@@ -158,8 +172,8 @@
                     </div>
                 </div>
                 <div class="flex gap-4 mt-6 justify-center">
-                    <button id="export-excel-btn" class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg transition">📄 ส่งออก Excel</button>
-                    <button id="export-pdf-btn" class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg transition">📕 ส่งออก PDF</button>
+                    <button id="export-excel-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition">📄 ส่งออก Excel</button>
+                    <button id="export-pdf-btn" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg transition">📕 ส่งออก PDF</button>
                 </div>
             </div>
             
@@ -254,7 +268,8 @@
         // --- App Constants ---
         const OT_PRE_RATE = 70;
         const OT_POST_RATE = 35;
-        const SPECIAL_FOOD_ALLOWANCE = 25; // CORRECTED VALUE
+        const SPECIAL_FOOD_ALLOWANCE = 25;
+        const DILIGENCE_STEPS = [0, 300, 350, 400, 450, 500, 550, 600];
 
         // --- App State ---
         let currentDate = new Date();
@@ -284,10 +299,11 @@
         const monthYearEl = document.getElementById('month-year');
         const selectedDateDisplay = document.getElementById('selected-date-display');
         const specialJobsContainer = document.getElementById('special-jobs-container');
-        const inputIds = ['wage', 'travel', 'food', 'special_food', 'night_shift_allowance', 'diligence_allowance', 'vehicle1', 'vehicle2'];
+        const inputIds = ['wage', 'travel', 'food', 'special_food', 'night_shift_allowance', 'vehicle1', 'vehicle2'];
         const inputs = inputIds.reduce((acc, id) => ({ ...acc, [id]: document.getElementById(id) }), {});
         const otPreHoursInput = document.getElementById('ot_pre_hours');
         const otPostHoursInput = document.getElementById('ot_post_hours');
+        const diligenceInput = document.getElementById('diligence_allowance');
         
         // --- Dark Mode ---
         function applyTheme(isDark) {
@@ -620,6 +636,8 @@
             if (data) {
                 inputIds.forEach(id => { if (data[id] != null) inputs[id].value = data[id]; });
                 
+                diligenceInput.value = data.diligence_allowance || 0;
+
                 // Compatibility for OT data
                 const preHours = data.ot_pre_hours ?? (data.ot_pre ? data.ot_pre / OT_PRE_RATE : 0);
                 const postHours = data.ot_post_hours ?? (data.ot_post ? data.ot_post / OT_POST_RATE : 0);
@@ -636,7 +654,7 @@
             updateAllJobTotals();
             updateOTUI();
         }
-        function clearForm() { inputIds.forEach(id => inputs[id].value = ''); otPreHoursInput.value = 0; otPostHoursInput.value = 0; document.querySelectorAll('.job-input').forEach(input => input.value = ''); shift = 'day'; updateShiftButtons(); updateAllJobTotals(); updateOTUI(); }
+        function clearForm() { inputIds.forEach(id => inputs[id].value = ''); otPreHoursInput.value = 0; otPostHoursInput.value = 0; diligenceInput.value = 0; document.querySelectorAll('.job-input').forEach(input => input.value = ''); shift = 'day'; updateShiftButtons(); updateAllJobTotals(); updateOTUI(); }
         function setDefaults() { inputs.wage.value = 372; inputs.travel.value = 60; inputs.food.value = 50; }
         function updateShiftButtons() { const dayBtn = document.getElementById('day-shift-btn'); const nightBtn = document.getElementById('night-shift-btn'); dayBtn.classList.remove('shift-selected'); nightBtn.classList.remove('shift-selected'); if (shift === 'day') { dayBtn.classList.add('shift-selected'); inputs.night_shift_allowance.value = ''; } else { nightBtn.classList.add('shift-selected'); inputs.night_shift_allowance.value = 100; } }
         
@@ -647,13 +665,25 @@
             document.getElementById('ot-pre-total').textContent = `${(preHours * OT_PRE_RATE).toLocaleString()} ฿`;
             document.getElementById('ot-post-total').textContent = `${(postHours * OT_POST_RATE).toLocaleString()} ฿`;
 
-            // CORRECTED: Auto-add/remove special food allowance
             if (postHours >= 2 && (!inputs.special_food.value || parseFloat(inputs.special_food.value) === 0)) {
                 inputs.special_food.value = SPECIAL_FOOD_ALLOWANCE;
             } else if (postHours < 2 && parseFloat(inputs.special_food.value) === SPECIAL_FOOD_ALLOWANCE) {
-                // If user reduces hours, remove the auto-added allowance
                 inputs.special_food.value = '';
             }
+        }
+
+        function handleDiligenceStep(direction) {
+            const currentValue = parseInt(diligenceInput.value) || 0;
+            let currentIndex = DILIGENCE_STEPS.indexOf(currentValue);
+            
+            if (currentIndex === -1) { currentIndex = 0; }
+
+            if (direction === 'plus' && currentIndex < DILIGENCE_STEPS.length - 1) {
+                currentIndex++;
+            } else if (direction === 'minus' && currentIndex > 0) {
+                currentIndex--;
+            }
+            diligenceInput.value = DILIGENCE_STEPS[currentIndex];
         }
 
         async function saveData() {
@@ -661,28 +691,21 @@
             const data = { shift };
             let hasValue = false;
             
-            // Standard inputs
             inputIds.forEach(id => { const value = inputs[id].type === 'number' ? parseFloat(inputs[id].value) : inputs[id].value; if (inputs[id].value.trim() !== '') { data[id] = isNaN(value) ? inputs[id].value : value; hasValue = true; } else { data[id] = null; } });
             
-            // OT inputs
-            const preHours = parseFloat(otPreHoursInput.value) || 0;
-            const postHours = parseFloat(otPostHoursInput.value) || 0;
-            if (preHours > 0) {
-                data.ot_pre_hours = preHours;
-                data.ot_pre = preHours * OT_PRE_RATE;
+            const diligenceValue = parseFloat(diligenceInput.value) || 0;
+            if (diligenceValue > 0) {
+                data.diligence_allowance = diligenceValue;
                 hasValue = true;
             } else {
-                data.ot_pre_hours = null; data.ot_pre = null;
-            }
-            if (postHours > 0) {
-                data.ot_post_hours = postHours;
-                data.ot_post = postHours * OT_POST_RATE;
-                hasValue = true;
-            } else {
-                data.ot_post_hours = null; data.ot_post = null;
+                data.diligence_allowance = null;
             }
 
-            // Special jobs
+            const preHours = parseFloat(otPreHoursInput.value) || 0;
+            const postHours = parseFloat(otPostHoursInput.value) || 0;
+            if (preHours > 0) { data.ot_pre_hours = preHours; data.ot_pre = preHours * OT_PRE_RATE; hasValue = true; } else { data.ot_pre_hours = null; data.ot_pre = null; }
+            if (postHours > 0) { data.ot_post_hours = postHours; data.ot_post = postHours * OT_POST_RATE; hasValue = true; } else { data.ot_post_hours = null; data.ot_post = null; }
+
             document.querySelectorAll('.job-input').forEach(input => { const key = input.dataset.jobKey; const value = parseFloat(input.value); if (!isNaN(value) && value > 0) { data[`job_${key}`] = value; hasValue = true; } else { data[`job_${key}`] = null; } });
             
             if (!hasValue) { alert('ไม่มีข้อมูลให้บันทึก'); return; }
@@ -740,6 +763,9 @@
             document.getElementById('ot-post-plus').addEventListener('click', () => { otPostHoursInput.stepUp(); updateOTUI(); });
             document.getElementById('ot-post-minus').addEventListener('click', () => { otPostHoursInput.stepDown(); updateOTUI(); });
             otPostHoursInput.addEventListener('input', updateOTUI);
+            // Diligence Stepper listeners
+            document.getElementById('diligence-plus').addEventListener('click', () => handleDiligenceStep('plus'));
+            document.getElementById('diligence-minus').addEventListener('click', () => handleDiligenceStep('minus'));
         }
 
         // --- Main Execution ---
