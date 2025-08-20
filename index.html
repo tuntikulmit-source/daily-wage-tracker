@@ -133,7 +133,7 @@
                 </div>
                 <div class="mb-4">
                     <h4 class="text-lg font-semibold mb-3">รายรับอื่นๆ</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <!-- OT Pre Input -->
                         <div class="card p-2 rounded-lg">
                             <label class="font-medium text-secondary">โอที (ก่อนงาน) <span class="text-xs">(ระบุเป็นชั่วโมง)</span></label>
@@ -153,6 +153,10 @@
                                 <button id="ot-post-plus" class="stepper-btn plus-btn bg-green-600 hover:bg-green-700 rounded-full text-white font-bold transition">+</button>
                                 <span id="ot-post-total" class="w-20 text-right text-green-400 font-semibold">0 ฿</span>
                             </div>
+                        </div>
+                        <!-- OT Holdover -->
+                        <div class="card p-2 rounded-lg flex items-center">
+                           <button id="ot-holdover-btn" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition">ขึ้นค้างงาน (70฿)</button>
                         </div>
                         <div><label>ค่าอาหารพิเศษ: <input id="special_food" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
                         <div><label>ค่ากะดึก: <input id="night_shift_allowance" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
@@ -333,6 +337,7 @@
         // --- App Constants ---
         let otPreRate = 70;
         let otPostRate = 35;
+        const OT_HOLDOVER_RATE = 70;
         const BASE_WAGE = 372;
         const FORCE_WAGE = 298;
         const TRADITION_WAGE = 372;
@@ -355,6 +360,7 @@
         let jobPrices = { ...defaultJobPrices };
         let shift = 'day';
         let payMultiplier = 1;
+        let otHoldoverActive = false;
         let incomeChart;
 
         // --- DOM Elements ---
@@ -372,6 +378,7 @@
         const inputs = inputIds.reduce((acc, id) => ({ ...acc, [id]: document.getElementById(id) }), {});
         const otPreHoursInput = document.getElementById('ot_pre_hours');
         const otPostHoursInput = document.getElementById('ot_post_hours');
+        const otHoldoverBtn = document.getElementById('ot-holdover-btn');
         const diligenceInput = document.getElementById('diligence_allowance');
         const diligenceContainer = document.getElementById('diligence-container');
         
@@ -589,7 +596,7 @@
             }
 
             const chartData = {};
-            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'โอที', ot_post: 'โอที', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
+            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'โอที', ot_post: 'โอที', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
 
             Object.entries(allTimeData).forEach(([dateStr, data]) => {
                 if (dateStr.startsWith(`${year}-${month}`)) {
@@ -833,6 +840,7 @@
             if (data) {
                 shift = data.shift || 'day';
                 payMultiplier = data.payMultiplier || 1;
+                otHoldoverActive = !!data.ot_holdover;
 
                 inputIds.forEach(id => { if (data[id] != null) inputs[id].value = data[id]; });
                 
@@ -848,6 +856,7 @@
             } else {
                 shift = 'day';
                 payMultiplier = 1;
+                otHoldoverActive = false;
                 setDefaults();
             }
             updatePrimaryButtonsUI();
@@ -862,6 +871,7 @@
             document.querySelectorAll('.job-input').forEach(input => input.value = ''); 
             shift = 'day'; 
             payMultiplier = 1;
+            otHoldoverActive = false;
             updatePrimaryButtonsUI();
             calculateAndApplyValues();
             updateAllJobTotals();
@@ -881,6 +891,12 @@
             }
             
             document.querySelector(`.pay-multiplier-btn[data-multiplier="${payMultiplier}"]`)?.classList.add('btn-selected');
+            
+            if(otHoldoverActive) {
+                otHoldoverBtn.classList.add('btn-selected');
+            } else {
+                otHoldoverBtn.classList.remove('btn-selected');
+            }
         }
 
         function calculateAndApplyValues() {
@@ -898,7 +914,7 @@
             // Enable/disable fields
             const fieldsToToggle = [inputs.travel, inputs.food, inputs.night_shift_allowance, otPreHoursInput, otPostHoursInput];
             fieldsToToggle.forEach(field => field.disabled = isSpecialDay);
-            document.querySelectorAll('.pay-multiplier-btn, #ot-pre-plus, #ot-pre-minus, #ot-post-plus, #ot-post-minus').forEach(btn => btn.disabled = isSpecialDay);
+            document.querySelectorAll('.pay-multiplier-btn, #ot-pre-plus, #ot-pre-minus, #ot-post-plus, #ot-post-minus, #ot-holdover-btn').forEach(btn => btn.disabled = isSpecialDay);
 
             if (isSpecialDay) {
                 inputs.travel.value = '';
@@ -906,6 +922,7 @@
                 inputs.night_shift_allowance.value = '';
                 otPreHoursInput.value = 0;
                 otPostHoursInput.value = 0;
+                otHoldoverActive = false;
             } else {
                 if (!inputs.travel.value) inputs.travel.value = 60;
                 if (!inputs.food.value) inputs.food.value = 50;
@@ -916,6 +933,7 @@
                 }
             }
             updateOTUI();
+            updateHoldoverOTState();
         }
 
         function updateOTUI() {
@@ -929,6 +947,19 @@
                 inputs.special_food.value = SPECIAL_FOOD_ALLOWANCE;
             } else if (postHours < 2 && parseFloat(inputs.special_food.value) === SPECIAL_FOOD_ALLOWANCE) {
                 inputs.special_food.value = '';
+            }
+        }
+
+        function updateHoldoverOTState() {
+            const postOtElements = [otPostHoursInput, document.getElementById('ot-post-plus'), document.getElementById('ot-post-minus')];
+            if (otHoldoverActive) {
+                otHoldoverBtn.classList.add('btn-selected');
+                postOtElements.forEach(el => el.disabled = true);
+                otPostHoursInput.value = 0;
+                updateOTUI();
+            } else {
+                otHoldoverBtn.classList.remove('btn-selected');
+                postOtElements.forEach(el => el.disabled = (shift === 'force' || shift === 'tradition'));
             }
         }
 
@@ -965,6 +996,13 @@
             const postHours = parseFloat(otPostHoursInput.value) || 0;
             if (preHours > 0) { data.ot_pre_hours = preHours; data.ot_pre = preHours * otPreRate; hasValue = true; } else { data.ot_pre_hours = null; data.ot_pre = null; }
             if (postHours > 0) { data.ot_post_hours = postHours; data.ot_post = postHours * otPostRate; hasValue = true; } else { data.ot_post_hours = null; data.ot_post = null; }
+            
+            if (otHoldoverActive) {
+                data.ot_holdover = OT_HOLDOVER_RATE;
+                hasValue = true;
+            } else {
+                data.ot_holdover = null;
+            }
 
             document.querySelectorAll('.job-input').forEach(input => { const key = input.dataset.jobKey; const value = parseFloat(input.value); if (!isNaN(value) && value > 0) { data[`job_${key}`] = value; hasValue = true; } else { data[`job_${key}`] = null; } });
             
@@ -988,7 +1026,7 @@
             const period2 = {};
             let period1WorkDays = 0;
             let period2WorkDays = 0;
-            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
+            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
             const table = document.getElementById('details-table');
             const thead = table.querySelector('thead');
             const tableBody = table.querySelector('tbody');
@@ -1086,7 +1124,7 @@
 
             let html = '';
             let total = 0;
-            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'OT ก่อน', ot_post: 'OT หลัง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
+            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'OT ก่อน', ot_post: 'OT หลัง', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
 
             const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ');
             if (vehicleText) {
@@ -1183,6 +1221,10 @@
             document.getElementById('ot-post-plus').addEventListener('click', () => { otPostHoursInput.stepUp(); updateOTUI(); });
             document.getElementById('ot-post-minus').addEventListener('click', () => { otPostHoursInput.stepDown(); updateOTUI(); });
             otPostHoursInput.addEventListener('input', updateOTUI);
+            otHoldoverBtn.addEventListener('click', () => {
+                otHoldoverActive = !otHoldoverActive;
+                updateHoldoverOTState();
+            });
             // Diligence Stepper listeners
             document.getElementById('diligence-plus').addEventListener('click', () => handleDiligenceStep('plus'));
             document.getElementById('diligence-minus').addEventListener('click', () => handleDiligenceStep('minus'));
