@@ -1088,6 +1088,11 @@
             let total = 0;
             const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'OT ก่อน', ot_post: 'OT หลัง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
 
+            const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ');
+            if (vehicleText) {
+                 html += `<p class="pb-2 mb-2 border-b" style="border-color: rgba(255,255,255,0.2)">เบอร์รถ: <span class="float-right font-semibold">${vehicleText}</span></p>`;
+            }
+
             Object.entries(incomeLabels).forEach(([key, label]) => {
                 const value = parseFloat(data[key]) || 0;
                 if (value > 0) {
