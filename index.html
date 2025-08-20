@@ -84,13 +84,19 @@
                     <div class="text-red-500">อา</div><div>จ</div><div>อ</div><div>พ</div><div>พฤ</div><div>ศ</div><div class="text-purple-500">ส</div>
                 </div>
                 <div id="calendar" class="calendar-grid"></div>
+                 <div class="text-right mt-2 pr-2">
+                    <span class="text-sm font-semibold text-green-400">
+                        รอบ 1-15: <span id="calendar-work-days-p1">0</span> วัน |
+                        รอบ 16-สิ้นเดือน: <span id="calendar-work-days-p2">0</span> วัน
+                    </span>
+                </div>
             </div>
 
             <!-- Data Entry Form -->
             <div class="card p-4 rounded-lg shadow-lg mb-4">
                 <h3 class="text-lg font-semibold mb-3">บันทึกข้อมูลสำหรับวันที่: <span id="selected-date-display" class="text-blue-400"></span></h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <button id="day-shift-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded-lg transition">☀️ กะเช้า</button>
+                    <button id="day-shift-btn" class="w-full bg-yellow-300 hover:bg-yellow-400 text-black font-bold py-2 px-4 rounded-lg transition">☀️ กะเช้า</button>
                     <button id="night-shift-btn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition">🌙 กะดึก</button>
                     <button id="force-day-btn" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-lg transition"> Forced Day Off</button>
                     <button id="tradition-day-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition"> Holiday</button>
@@ -173,12 +179,18 @@
                 <h3 class="text-lg font-semibold mb-3">สรุปยอดรายรับ (แบ่งตามรอบบิล)</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                     <div>
-                        <h4 class="font-bold text-blue-400 mb-2 pb-1 border-b" style="border-color: var(--border-color);">รอบวันที่ 1-15</h4>
+                        <h4 class="font-bold text-blue-400 mb-2 pb-1 border-b" style="border-color: var(--border-color);">
+                            รอบวันที่ 1-15 
+                            <span class="text-sm font-normal text-secondary float-right">(<span id="work-days-period1">0</span> วันทำงาน)</span>
+                        </h4>
                         <div id="summary-period1" class="space-y-1"></div>
                         <div class="mt-2 pt-2 border-t font-bold text-lg" style="border-color: var(--border-color);">รวม: <span id="total-period1" class="text-green-400">0</span> บาท</div>
                     </div>
                     <div>
-                        <h4 class="font-bold text-blue-400 mb-2 pb-1 border-b" style="border-color: var(--border-color);">รอบวันที่ 16-สิ้นเดือน</h4>
+                        <h4 class="font-bold text-blue-400 mb-2 pb-1 border-b" style="border-color: var(--border-color);">
+                            รอบวันที่ 16-สิ้นเดือน 
+                            <span class="text-sm font-normal text-secondary float-right">(<span id="work-days-period2">0</span> วันทำงาน)</span>
+                        </h4>
                         <div id="summary-period2" class="space-y-1"></div>
                         <div class="mt-2 pt-2 border-t font-bold text-lg" style="border-color: var(--border-color);">รวม: <span id="total-period2" class="text-green-400">0</span> บาท</div>
                     </div>
@@ -839,7 +851,13 @@
         
         function updatePrimaryButtonsUI() {
             document.querySelectorAll('.grid button[id$="-btn"]').forEach(btn => btn.classList.remove('btn-selected'));
-            document.getElementById(`${shift}-day-btn`)?.classList.add('btn-selected');
+            
+            if (shift === 'day' || shift === 'night') {
+                document.getElementById(`${shift}-shift-btn`)?.classList.add('btn-selected');
+            } else {
+                document.getElementById(`${shift}-day-btn`)?.classList.add('btn-selected');
+            }
+            
             document.querySelector(`.pay-multiplier-btn[data-multiplier="${payMultiplier}"]`)?.classList.add('btn-selected');
         }
 
@@ -942,7 +960,61 @@
             }
         }
         async function deleteData() { if (!selectedDate) return; const docRef = doc(db, `artifacts/${appId}/users/${userId}/wages`, selectedDate); try { await deleteDoc(docRef); console.log("ลบข้อมูลสำเร็จ!"); clearForm(); setDefaults(); hideDeleteModal(); } catch (error) { console.error("เกิดข้อผิดพลาดในการลบ: ", error); hideDeleteModal(); } }
-        function updateSummariesAndTable() { const period1 = {}; const period2 = {}; const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' }; const table = document.getElementById('details-table'); const thead = table.querySelector('thead'); const tableBody = table.querySelector('tbody'); tableBody.innerHTML = ''; thead.innerHTML = ''; const headerRow = document.createElement('tr'); const staticHeaders = ['วันที่', 'กะ', 'เบอร์รถ', 'รวม']; staticHeaders.forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); Object.values(incomeLabels).forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); ['OT ก่อน', 'OT หลัง'].forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); }); Object.values(jobPrices).forEach(job => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = job.name; headerRow.appendChild(th); }); thead.appendChild(headerRow); Object.entries(monthlyData).sort(([dateA], [dateB]) => dateA.localeCompare(dateB)).forEach(([dateStr, data]) => { const localDate = new Date(dateStr + 'T00:00:00'); const day = localDate.getDate(); const targetPeriod = day <= 15 ? period1 : period2; let dailyTotal = 0; for(const key in incomeLabels) { const value = parseFloat(data[key]) || 0; if(value > 0) { targetPeriod[key] = (targetPeriod[key] || 0) + value; dailyTotal += value; } } const otPreVal = parseFloat(data.ot_pre) || 0; const otPostVal = parseFloat(data.ot_post) || 0; const otPreHoursVal = parseFloat(data.ot_pre_hours) || 0; const otPostHoursVal = parseFloat(data.ot_post_hours) || 0; if (otPreVal > 0) { dailyTotal += otPreVal; if (!targetPeriod.ot_pre) targetPeriod.ot_pre = { hours: 0, amount: 0 }; targetPeriod.ot_pre.hours += otPreHoursVal || (otPreVal / otPreRate); targetPeriod.ot_pre.amount += otPreVal; } if (otPostVal > 0) { dailyTotal += otPostVal; if (!targetPeriod.ot_post) targetPeriod.ot_post = { hours: 0, amount: 0 }; targetPeriod.ot_post.hours += otPostHoursVal || (otPostVal / otPostRate); targetPeriod.ot_post.amount += otPostVal; } for (const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; if (count > 0) { let jobTotal = 0; if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } dailyTotal += jobTotal; const periodKey = `job_${key}`; targetPeriod[periodKey] = (targetPeriod[periodKey] || 0) + jobTotal; } } const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ') || '-'; const row = document.createElement('tr'); row.className = 'table-row hover:bg-tertiary'; row.innerHTML = `<td class="px-3 py-2">${localDate.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</td><td class="px-3 py-2">${data.shift === 'night' ? '🌙' : '☀️'}</td><td class="px-3 py-2 text-purple-400 font-semibold">${vehicleText}</td><td class="px-3 py-2 font-bold text-green-400">${dailyTotal.toLocaleString()}</td>`; for(const key in incomeLabels) { row.innerHTML += `<td class="px-3 py-2">${(parseFloat(data[key]) || 0).toLocaleString()}</td>`; } row.innerHTML += `<td class="px-3 py-2">${otPreVal.toLocaleString()}</td>`; row.innerHTML += `<td class="px-3 py-2">${otPostVal.toLocaleString()}</td>`; for(const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; let jobTotal = 0; if (count > 0) { if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } } row.innerHTML += `<td class="px-3 py-2">${jobTotal.toLocaleString()}</td>`; } tableBody.appendChild(row); }); const renderSummary = (periodData, elId, totalElId) => { const el = document.getElementById(elId); el.innerHTML = ''; let total = 0; const sortedKeys = Object.keys(periodData).sort(); sortedKeys.forEach(key => { const value = periodData[key]; let label = incomeLabels[key]; let amount = 0; if (key === 'ot_pre' || key === 'ot_post') { label = key === 'ot_pre' ? `OT ก่อน (${value.hours.toFixed(1)} ชม.)` : `OT หลัง (${value.hours.toFixed(1)} ชม.)`; amount = value.amount; } else if (key.startsWith('job_')) { const jobKey = key.substring(4); label = jobPrices[jobKey]?.name || 'งานพิเศษ'; amount = value; } else { amount = value; } total += amount; if (label) { el.innerHTML += `<p>${label}: <span class="float-right font-semibold">${amount.toLocaleString()}</span></p>`; } }); document.getElementById(totalElId).textContent = total.toLocaleString(); }; renderSummary(period1, 'summary-period1', 'total-period1'); renderSummary(period2, 'summary-period2', 'total-period2'); }
+        
+        function updateSummariesAndTable() {
+            const period1 = {};
+            const period2 = {};
+            let period1WorkDays = 0;
+            let period2WorkDays = 0;
+            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
+            const table = document.getElementById('details-table');
+            const thead = table.querySelector('thead');
+            const tableBody = table.querySelector('tbody');
+            tableBody.innerHTML = ''; thead.innerHTML = '';
+            const headerRow = document.createElement('tr');
+            const staticHeaders = ['วันที่', 'กะ', 'เบอร์รถ', 'รวม'];
+            staticHeaders.forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); });
+            Object.values(incomeLabels).forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); });
+            ['OT ก่อน', 'OT หลัง'].forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); });
+            Object.values(jobPrices).forEach(job => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = job.name; headerRow.appendChild(th); });
+            thead.appendChild(headerRow);
+
+            Object.entries(monthlyData).sort(([dateA], [dateB]) => dateA.localeCompare(dateB)).forEach(([dateStr, data]) => {
+                const localDate = new Date(dateStr + 'T00:00:00');
+                const day = localDate.getDate();
+                const targetPeriod = day <= 15 ? period1 : period2;
+                if (day <= 15) { period1WorkDays++; } else { period2WorkDays++; }
+
+                let dailyTotal = 0;
+                for(const key in incomeLabels) { const value = parseFloat(data[key]) || 0; if(value > 0) { targetPeriod[key] = (targetPeriod[key] || 0) + value; dailyTotal += value; } }
+                const otPreVal = parseFloat(data.ot_pre) || 0;
+                const otPostVal = parseFloat(data.ot_post) || 0;
+                const otPreHoursVal = parseFloat(data.ot_pre_hours) || 0;
+                const otPostHoursVal = parseFloat(data.ot_post_hours) || 0;
+                if (otPreVal > 0) { dailyTotal += otPreVal; if (!targetPeriod.ot_pre) targetPeriod.ot_pre = { hours: 0, amount: 0 }; targetPeriod.ot_pre.hours += otPreHoursVal || (otPreVal / otPreRate); targetPeriod.ot_pre.amount += otPreVal; }
+                if (otPostVal > 0) { dailyTotal += otPostVal; if (!targetPeriod.ot_post) targetPeriod.ot_post = { hours: 0, amount: 0 }; targetPeriod.ot_post.hours += otPostHoursVal || (otPostVal / otPostRate); targetPeriod.ot_post.amount += otPostVal; }
+                for (const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; if (count > 0) { let jobTotal = 0; if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } dailyTotal += jobTotal; const periodKey = `job_${key}`; targetPeriod[periodKey] = (targetPeriod[periodKey] || 0) + jobTotal; } }
+                const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ') || '-';
+                const row = document.createElement('tr');
+                row.className = 'table-row hover:bg-tertiary';
+                row.innerHTML = `<td class="px-3 py-2">${localDate.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</td><td class="px-3 py-2">${data.shift === 'night' ? '🌙' : '☀️'}</td><td class="px-3 py-2 text-purple-400 font-semibold">${vehicleText}</td><td class="px-3 py-2 font-bold text-green-400">${dailyTotal.toLocaleString()}</td>`;
+                for(const key in incomeLabels) { row.innerHTML += `<td class="px-3 py-2">${(parseFloat(data[key]) || 0).toLocaleString()}</td>`; }
+                row.innerHTML += `<td class="px-3 py-2">${otPreVal.toLocaleString()}</td>`;
+                row.innerHTML += `<td class="px-3 py-2">${otPostVal.toLocaleString()}</td>`;
+                for(const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; let jobTotal = 0; if (count > 0) { if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } } row.innerHTML += `<td class="px-3 py-2">${jobTotal.toLocaleString()}</td>`; }
+                tableBody.appendChild(row);
+            });
+
+            document.getElementById('calendar-work-days-p1').textContent = period1WorkDays;
+            document.getElementById('calendar-work-days-p2').textContent = period2WorkDays;
+            document.getElementById('work-days-period1').textContent = period1WorkDays;
+            document.getElementById('work-days-period2').textContent = period2WorkDays;
+
+            const renderSummary = (periodData, elId, totalElId) => { const el = document.getElementById(elId); el.innerHTML = ''; let total = 0; const sortedKeys = Object.keys(periodData).sort(); sortedKeys.forEach(key => { const value = periodData[key]; let label = incomeLabels[key]; let amount = 0; if (key === 'ot_pre' || key === 'ot_post') { label = key === 'ot_pre' ? `OT ก่อน (${value.hours.toFixed(1)} ชม.)` : `OT หลัง (${value.hours.toFixed(1)} ชม.)`; amount = value.amount; } else if (key.startsWith('job_')) { const jobKey = key.substring(4); label = jobPrices[jobKey]?.name || 'งานพิเศษ'; amount = value; } else { amount = value; } total += amount; if (label) { el.innerHTML += `<p>${label}: <span class="float-right font-semibold">${amount.toLocaleString()}</span></p>`; } }); document.getElementById(totalElId).textContent = total.toLocaleString(); };
+            renderSummary(period1, 'summary-period1', 'total-period1');
+            renderSummary(period2, 'summary-period2', 'total-period2');
+        }
+
         function showDeleteModal() { if (!selectedDate) { alert('กรุณาเลือกวันที่ต้องการลบ'); return; } const modal = document.getElementById('delete-modal'); const localDate = new Date(selectedDate + 'T00:00:00'); modal.querySelector('#delete-date-confirm').textContent = localDate.toLocaleDateString('th-TH'); modal.style.display = 'flex'; }
         function hideDeleteModal() { document.getElementById('delete-modal').style.display = 'none'; }
         function showPriceModal() { const modal = document.getElementById('price-modal'); modal.style.display = 'flex'; }
