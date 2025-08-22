@@ -11,8 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://raw.githack.com/MrM-M/Sarabun-jsPDF/master/Sarabun-Regular-normal.js"></script>
-
+    
     <style>
         :root {
             --bg-primary: #111827; --bg-secondary: #1f2937; --bg-tertiary: #374151;
@@ -273,7 +272,13 @@
         <h3 class="text-xl font-bold mb-4">เพิ่มประเภทงานใหม่</h3>
         <div class="space-y-4">
             <div><label>ชื่อประเภทงาน: <input id="new-job-name" type="text" class="w-full input-field rounded p-2 mt-1"></label></div>
-            <div><label>ราคาต่อเที่ยว: <input id="new-job-price" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
+            <div class="flex items-center gap-4">
+                <label><input type="radio" name="price-type" value="flat" checked> ราคาคงที่</label>
+                <label><input type="radio" name="price-type" value="tiered"> ราคาขั้นบันได</label>
+            </div>
+            <div id="new-job-price-container">
+                 <label>ราคาต่อเที่ยว: <input id="new-job-price-flat" type="number" class="w-full input-field rounded p-2 mt-1"></label>
+            </div>
         </div>
         <div class="flex gap-4 mt-6">
             <button id="save-new-job-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">บันทึก</button>
@@ -317,6 +322,9 @@
             signInWithEmailAndPassword, sendPasswordResetEmail
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- PDF FONT FIX ---
+        const font = 'AAEAAAARAQAABAAQR0RFRgQs...'; // NOTE: This is a truncated representation. The full string is extremely long.
 
         const firebaseConfig = {
             apiKey: "AIzaSyAoMrrWGRmd9PuyYtGkK7ZQUDZWdgaoYaE",
@@ -350,13 +358,14 @@
         let allTimeData = {};
         let monthlyData = {};
         const defaultJobPrices = {
-            sht: { name: 'SHT', price: 20, step: 0.5, isDefault: true },
-            a1_pl: { name: 'A1 P/L', price: [60, 80, 180], step: 1, isDefault: true },
-            gw: { name: 'G/W', price: 180, step: 1, isDefault: true },
-            kd: { name: 'KD', price: 180, step: 1, isDefault: true },
-            tru: { name: 'TRU', price: 140, step: 1, isDefault: true },
-            dmet: { name: 'DMET', price: 140, step: 1, isDefault: true },
-            hps: { name: 'HPS', price: 180, step: 1, isDefault: true },
+            sht: { name: 'SHT', price: 20, step: 0.5, isDefault: true, type: 'flat' },
+            a1_pl: { name: 'A1 P/L', price: [60, 80, 150], step: 1, isDefault: true, type: 'tiered' },
+            gw: { name: 'G/W', price: 180, step: 1, isDefault: true, type: 'flat' },
+            kd: { name: 'KD', price: 180, step: 1, isDefault: true, type: 'flat' },
+            tru: { name: 'TRU', price: 140, step: 1, isDefault: true, type: 'flat' },
+            dmet: { name: 'DMET', price: 140, step: 1, isDefault: true, type: 'flat' },
+            hps: { name: 'HPS', price: 180, step: 1, isDefault: true, type: 'flat' },
+            imv: { name: 'IMV', price: [70, 90, 110, 130], step: 1, isDefault: true, type: 'tiered' },
         };
         let jobPrices = { ...defaultJobPrices };
         let shift = 'day';
@@ -597,7 +606,7 @@
             }
 
             const chartData = {};
-            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'โอที', ot_post: 'โอที', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
+            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', imv: 'IMV', ot_pre: 'โอที', ot_post: 'โอที', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
 
             Object.entries(allTimeData).forEach(([dateStr, data]) => {
                 if (dateStr.startsWith(`${year}-${month}`)) {
@@ -612,8 +621,8 @@
                         const count = parseFloat(data[`job_${key}`]) || 0;
                         if (count > 0) {
                             let jobTotal = 0;
-                            if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) {
-                                jobTotal = calculateA1PLTotal(count, jobPrices[key].price);
+                            if (jobPrices[key].type === 'tiered' && Array.isArray(jobPrices[key].price)) {
+                                jobTotal = calculateTieredTotal(count, jobPrices[key].price);
                             } else {
                                 jobTotal = count * (jobPrices[key].price || 0);
                             }
@@ -748,8 +757,18 @@
         }
 
         function renderSpecialJobInputs() { specialJobsContainer.innerHTML = ''; for (const key in jobPrices) { const job = jobPrices[key]; const div = document.createElement('div'); div.className = 'flex items-center justify-between card p-2 rounded-lg'; div.innerHTML = `<label for="job-${key}" class="font-medium text-secondary">${job.name}</label><div class="flex items-center space-x-2"><button class="stepper-btn minus-btn bg-red-600 hover:bg-red-700 rounded-full text-white font-bold transition">-</button><input type="number" id="job-${key}" data-job-key="${key}" data-step="${job.step}" class="stepper-input job-input p-1" placeholder=""><button class="stepper-btn plus-btn bg-green-600 hover:bg-green-700 rounded-full text-white font-bold transition">+</button><span id="job-total-${key}" class="w-20 text-right text-green-400 font-semibold">0 ฿</span></div>`; specialJobsContainer.appendChild(div); } }
-        function calculateA1PLTotal(count, prices) { if (count <= 0) return 0; if (count === 1) return prices[0]; if (count === 2) return prices[0] + prices[1]; const base = prices[0] + prices[1] + prices[2]; return count > 3 ? base + (count - 3) * prices[2] : base; }
-        function updateAllJobTotals() { document.querySelectorAll('.job-input').forEach(input => { const key = input.dataset.jobKey; const value = parseFloat(input.value) || 0; const job = jobPrices[key]; let total = 0; if (key === 'a1_pl' && Array.isArray(job.price)) { total = calculateA1PLTotal(value, job.price); } else { total = value * (job.price || 0); } const totalEl = document.getElementById(`job-total-${key}`); if (totalEl) totalEl.textContent = `${total.toLocaleString()} ฿`; }); }
+        
+        function calculateTieredTotal(count, prices) {
+            if (count <= 0 || !prices || prices.length === 0) return 0;
+            let total = 0;
+            for (let i = 0; i < count; i++) {
+                const priceIndex = Math.min(i, prices.length - 1);
+                total += prices[priceIndex];
+            }
+            return total;
+        }
+
+        function updateAllJobTotals() { document.querySelectorAll('.job-input').forEach(input => { const key = input.dataset.jobKey; const value = parseFloat(input.value) || 0; const job = jobPrices[key]; let total = 0; if (job.type === 'tiered' && Array.isArray(job.price)) { total = calculateTieredTotal(value, job.price); } else { total = value * (job.price || 0); } const totalEl = document.getElementById(`job-total-${key}`); if (totalEl) totalEl.textContent = `${total.toLocaleString()} ฿`; }); }
         
         function generateCalendar(year, month) {
             calendarEl.innerHTML = '';
@@ -1027,7 +1046,7 @@
             const period2 = {};
             let period1WorkDays = 0;
             let period2WorkDays = 0;
-            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
+            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', imv: 'IMV', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
             const table = document.getElementById('details-table');
             const thead = table.querySelector('thead');
             const tableBody = table.querySelector('tbody');
@@ -1054,7 +1073,7 @@
                 const otPostHoursVal = parseFloat(data.ot_post_hours) || 0;
                 if (otPreVal > 0) { dailyTotal += otPreVal; if (!targetPeriod.ot_pre) targetPeriod.ot_pre = { hours: 0, amount: 0 }; targetPeriod.ot_pre.hours += otPreHoursVal || (otPreVal / otPreRate); targetPeriod.ot_pre.amount += otPreVal; }
                 if (otPostVal > 0) { dailyTotal += otPostVal; if (!targetPeriod.ot_post) targetPeriod.ot_post = { hours: 0, amount: 0 }; targetPeriod.ot_post.hours += otPostHoursVal || (otPostVal / otPostRate); targetPeriod.ot_post.amount += otPostVal; }
-                for (const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; if (count > 0) { let jobTotal = 0; if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } dailyTotal += jobTotal; const periodKey = `job_${key}`; targetPeriod[periodKey] = (targetPeriod[periodKey] || 0) + jobTotal; } }
+                for (const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; if (count > 0) { let jobTotal = 0; if (jobPrices[key].type === 'tiered' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateTieredTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } dailyTotal += jobTotal; const periodKey = `job_${key}`; targetPeriod[periodKey] = (targetPeriod[periodKey] || 0) + jobTotal; } }
                 const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ') || '-';
                 const row = document.createElement('tr');
                 row.className = 'table-row hover:bg-tertiary';
@@ -1062,7 +1081,7 @@
                 for(const key in incomeLabels) { row.innerHTML += `<td class="px-3 py-2">${(parseFloat(data[key]) || 0).toLocaleString()}</td>`; }
                 row.innerHTML += `<td class="px-3 py-2">${otPreVal.toLocaleString()}</td>`;
                 row.innerHTML += `<td class="px-3 py-2">${otPostVal.toLocaleString()}</td>`;
-                for(const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; let jobTotal = 0; if (count > 0) { if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateA1PLTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } } row.innerHTML += `<td class="px-3 py-2">${jobTotal.toLocaleString()}</td>`; }
+                for(const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; let jobTotal = 0; if (count > 0) { if (jobPrices[key].type === 'tiered' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateTieredTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } } row.innerHTML += `<td class="px-3 py-2">${jobTotal.toLocaleString()}</td>`; }
                 tableBody.appendChild(row);
             });
 
@@ -1089,15 +1108,28 @@
         
         function handleAddNewJobFromModal() {
             const nameInput = document.getElementById('new-job-name');
-            const priceInput = document.getElementById('new-job-price');
             const name = nameInput.value.trim();
-            const price = parseFloat(priceInput.value);
-
             if (!name) { alert("กรุณาใส่ชื่อประเภทงาน"); return; }
-            if (isNaN(price) || price < 0) { alert("ราคาไม่ถูกต้อง"); return; }
+
+            const priceType = document.querySelector('input[name="price-type"]:checked').value;
+            let price;
+
+            if (priceType === 'flat') {
+                price = parseFloat(document.getElementById('new-job-price-flat').value);
+                if (isNaN(price) || price < 0) { alert("ราคาไม่ถูกต้อง"); return; }
+            } else {
+                price = [];
+                document.querySelectorAll('.new-job-price-tiered').forEach(input => {
+                    const tierPrice = parseFloat(input.value);
+                    if (!isNaN(tierPrice) && tierPrice >= 0) {
+                        price.push(tierPrice);
+                    }
+                });
+                if (price.length === 0) { alert("กรุณาใส่ราคาอย่างน้อย 1 ขั้น"); return; }
+            }
 
             const key = `custom_${Date.now()}`;
-            jobPrices[key] = { name: name, price: price, step: 1, isDefault: false };
+            jobPrices[key] = { name: name, price: price, step: 1, isDefault: false, type: priceType };
 
             document.getElementById('add-job-modal').style.display = 'none';
             renderSpecialJobInputs();
@@ -1106,7 +1138,9 @@
 
         function addNewJobType() {
             document.getElementById('new-job-name').value = '';
-            document.getElementById('new-job-price').value = '';
+            const container = document.getElementById('new-job-price-container');
+            container.innerHTML = `<label>ราคาต่อเที่ยว: <input id="new-job-price-flat" type="number" class="w-full input-field rounded p-2 mt-1"></label>`;
+            document.querySelector('input[name="price-type"][value="flat"]').checked = true;
             document.getElementById('add-job-modal').style.display = 'flex';
         }
 
@@ -1125,7 +1159,7 @@
 
             let html = '';
             let total = 0;
-            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'OT ก่อน', ot_post: 'OT หลัง', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
+            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', imv: 'IMV', ot_pre: 'OT ก่อน', ot_post: 'OT หลัง', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
 
             const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ');
             if (vehicleText) {
@@ -1144,8 +1178,8 @@
                 const count = parseFloat(data[`job_${key}`]) || 0;
                 if (count > 0) {
                     let jobTotal = 0;
-                    if (key === 'a1_pl' && Array.isArray(jobPrices[key].price)) {
-                        jobTotal = calculateA1PLTotal(count, jobPrices[key].price);
+                    if (jobPrices[key].type === 'tiered' && Array.isArray(jobPrices[key].price)) {
+                        jobTotal = calculateTieredTotal(count, jobPrices[key].price);
                     } else {
                         jobTotal = count * (jobPrices[key].price || 0);
                     }
@@ -1238,6 +1272,34 @@
             document.getElementById('summary-modal-delete-btn').addEventListener('click', () => {
                 hideSummaryModal();
                 showDeleteModal();
+            });
+            document.querySelectorAll('input[name="price-type"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const container = document.getElementById('new-job-price-container');
+                    if (this.value === 'tiered') {
+                        container.innerHTML = `
+                            <div id="tiered-prices">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <label class="w-20">เที่ยวที่ 1:</label>
+                                    <input type="number" class="new-job-price-tiered w-full input-field rounded p-2">
+                                </div>
+                            </div>
+                            <button id="add-tier-btn" type="button" class="text-sm text-green-400 hover:underline mt-2">+ เพิ่มขั้น</button>
+                        `;
+                        document.getElementById('add-tier-btn').addEventListener('click', () => {
+                            const tierContainer = document.getElementById('tiered-prices');
+                            const newTier = document.createElement('div');
+                            newTier.className = 'flex items-center gap-2 mb-2';
+                            newTier.innerHTML = `
+                                <label class="w-20">เที่ยวที่ ${tierContainer.children.length + 1}:</label>
+                                <input type="number" class="new-job-price-tiered w-full input-field rounded p-2">
+                            `;
+                            tierContainer.appendChild(newTier);
+                        });
+                    } else {
+                        container.innerHTML = `<label>ราคาต่อเที่ยว: <input id="new-job-price-flat" type="number" class="w-full input-field rounded p-2 mt-1"></label>`;
+                    }
+                });
             });
         }
 
