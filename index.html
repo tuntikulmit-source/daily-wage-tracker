@@ -95,6 +95,12 @@
                 </div>
             </div>
 
+            <!-- Monthly Total Card -->
+            <div class="card p-4 rounded-lg shadow-lg mb-4 text-center">
+                <h3 class="text-lg font-semibold text-secondary">รายรับรวมเดือนนี้</h3>
+                <p id="monthly-total-display" class="text-3xl font-bold text-green-400 mt-1">0 บาท</p>
+            </div>
+
             <!-- Data Entry Form -->
             <div class="card p-4 rounded-lg shadow-lg mb-4">
                 <h3 class="text-lg font-semibold mb-3">บันทึกข้อมูลสำหรับวันที่: <span id="selected-date-display" class="text-blue-400"></span></h3>
@@ -115,7 +121,6 @@
                         <div><label>ค่าจ้าง: <input id="wage" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="372"></label></div>
                         <div><label>ค่าเดินทาง: <input id="travel" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="60"></label></div>
                         <div><label>ค่าอาหาร: <input id="food" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="50"></label></div>
-                        <div><label>IMV: <input id="imv" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="กรอกราคาเอง"></label></div>
                     </div>
                     <div id="special-jobs-container" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3"></div>
                     <div class="flex justify-end items-center mt-3 gap-2">
@@ -203,9 +208,10 @@
                         <div class="mt-2 pt-2 border-t font-bold text-lg" style="border-color: var(--border-color);">รวม: <span id="total-period2" class="text-green-400">0</span> บาท</div>
                     </div>
                 </div>
-                <div class="flex gap-4 mt-6 justify-center">
+                <div class="flex flex-col sm:flex-row gap-4 mt-6 justify-center">
                     <button id="export-excel-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition">📄 ส่งออก Excel</button>
                     <button id="export-pdf-btn" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg transition">📕 ส่งออก PDF</button>
+                    <button id="export-slip-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition">🖼️ สร้างสลิปรูปภาพ</button>
                 </div>
             </div>
             
@@ -235,6 +241,24 @@
     </div>
 
     <!-- Modals -->
+    <div id="slip-period-modal" class="modal"><div class="modal-content">
+        <h3 class="text-xl font-bold mb-4">เลือกรอบบิลสำหรับสลิป</h3>
+        <div class="flex gap-4 mt-6">
+            <button id="slip-period1-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded-lg">รอบ 1-15</button>
+            <button id="slip-period2-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded-lg">รอบ 16-สิ้นเดือน</button>
+        </div>
+         <button id="cancel-slip-period-btn" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">ยกเลิก</button>
+    </div></div>
+
+    <div id="slip-image-modal" class="modal"><div class="modal-content">
+        <h3 class="text-xl font-bold mb-4">สลิปรายรับ</h3>
+        <img id="slip-image" class="w-full rounded-lg border" style="border-color: var(--border-color);" alt="Payslip Image">
+        <div class="flex gap-4 mt-6">
+            <a id="download-slip-btn" href="#" download="payslip.png" class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">ดาวน์โหลด</a>
+            <button id="close-slip-image-btn" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">ปิด</button>
+        </div>
+    </div></div>
+
     <div id="summary-modal" class="modal"><div id="summary-modal-content" class="modal-content transition-colors duration-300">
         <button id="summary-modal-close" class="absolute top-2 right-3 text-2xl font-bold hover:text-gray-400">&times;</button>
         <h3 id="summary-modal-title" class="text-xl font-bold mb-4">สรุปข้อมูล</h3>
@@ -397,11 +421,13 @@
         function applyTheme(isDark) {
             const root = document.documentElement;
             if (isDark) {
+                root.classList.add('dark-mode');
                 root.classList.remove('light-mode');
                 sunIcon.style.display = 'none';
                 moonIcon.style.display = 'block';
             } else {
                 root.classList.add('light-mode');
+                root.classList.remove('dark-mode');
                 sunIcon.style.display = 'block';
                 moonIcon.style.display = 'none';
             }
@@ -1091,9 +1117,10 @@
             document.getElementById('work-days-period1').textContent = period1WorkDays;
             document.getElementById('work-days-period2').textContent = period2WorkDays;
 
-            const renderSummary = (periodData, elId, totalElId) => { const el = document.getElementById(elId); el.innerHTML = ''; let total = 0; const sortedKeys = Object.keys(periodData).sort(); sortedKeys.forEach(key => { const value = periodData[key]; let label = incomeLabels[key]; let amount = 0; if (key === 'ot_pre' || key === 'ot_post') { label = key === 'ot_pre' ? `OT ก่อน (${value.hours.toFixed(1)} ชม.)` : `OT หลัง (${value.hours.toFixed(1)} ชม.)`; amount = value.amount; } else if (key.startsWith('job_')) { const jobKey = key.substring(4); label = jobPrices[jobKey]?.name || 'งานพิเศษ'; amount = value; } else { amount = value; } total += amount; if (label) { el.innerHTML += `<p>${label}: <span class="float-right font-semibold">${amount.toLocaleString()}</span></p>`; } }); document.getElementById(totalElId).textContent = total.toLocaleString(); };
-            renderSummary(period1, 'summary-period1', 'total-period1');
-            renderSummary(period2, 'summary-period2', 'total-period2');
+            const renderSummary = (periodData, elId, totalElId) => { const el = document.getElementById(elId); el.innerHTML = ''; let total = 0; const sortedKeys = Object.keys(periodData).sort(); sortedKeys.forEach(key => { const value = periodData[key]; let label = incomeLabels[key]; let amount = 0; if (key === 'ot_pre' || key === 'ot_post') { label = key === 'ot_pre' ? `OT ก่อน (${value.hours.toFixed(1)} ชม.)` : `OT หลัง (${value.hours.toFixed(1)} ชม.)`; amount = value.amount; } else if (key.startsWith('job_')) { const jobKey = key.substring(4); label = jobPrices[jobKey]?.name || 'งานพิเศษ'; amount = value; } else { amount = value; } total += amount; if (label) { el.innerHTML += `<p>${label}: <span class="float-right font-semibold">${amount.toLocaleString()}</span></p>`; } }); document.getElementById(totalElId).textContent = total.toLocaleString(); return total; };
+            const total1 = renderSummary(period1, 'summary-period1', 'total-period1');
+            const total2 = renderSummary(period2, 'summary-period2', 'total-period2');
+            document.getElementById('monthly-total-display').textContent = `${(total1 + total2).toLocaleString()} บาท`;
         }
 
         function showDeleteModal() { if (!selectedDate) { alert('กรุณาเลือกวันที่ต้องการลบ'); return; } const modal = document.getElementById('delete-modal'); const localDate = new Date(selectedDate + 'T00:00:00'); modal.querySelector('#delete-date-confirm').textContent = localDate.toLocaleDateString('th-TH'); modal.style.display = 'flex'; }
@@ -1245,6 +1272,11 @@
             specialJobsContainer.addEventListener('input', e => { if (e.target.classList.contains('job-input')) updateAllJobTotals(); });
             document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
             document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
+            document.getElementById('export-slip-btn').addEventListener('click', () => document.getElementById('slip-period-modal').style.display = 'flex');
+            document.getElementById('cancel-slip-period-btn').addEventListener('click', () => document.getElementById('slip-period-modal').style.display = 'none');
+            document.getElementById('slip-period1-btn').addEventListener('click', () => generateSlipImage(1));
+            document.getElementById('slip-period2-btn').addEventListener('click', () => generateSlipImage(2));
+            document.getElementById('close-slip-image-btn').addEventListener('click', () => document.getElementById('slip-image-modal').style.display = 'none');
             document.getElementById('cancel-auth-btn').addEventListener('click', () => document.getElementById('auth-modal').style.display = 'none');
             document.getElementById('reset-password-btn').addEventListener('click', handlePasswordReset);
             chartYearSelect.addEventListener('change', renderIncomeChart);
