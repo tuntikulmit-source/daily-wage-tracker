@@ -362,6 +362,7 @@
         let payMultiplier = 1;
         let otHoldoverActive = false;
         let incomeChart;
+        let isSigningIn = false; // Flag to manage auth state changes
 
         // --- DOM Elements ---
         const mainContentEl = document.getElementById('main-content');
@@ -412,7 +413,10 @@
                 updateAuthUI(user);
                 main();
             } else {
-                signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
+                // Only sign in anonymously if we are not in the middle of a sign-in/link process
+                if (!isSigningIn) {
+                    signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
+                }
             }
         });
 
@@ -459,6 +463,7 @@
             if (!anonymousUser || !anonymousUser.isAnonymous) { errorEl.textContent = 'สถานะผู้ใช้ไม่ถูกต้อง'; return; }
             const anonymousUid = anonymousUser.uid;
 
+            isSigningIn = true;
             try {
                 errorEl.textContent = 'กำลังสำรองข้อมูลชั่วคราว...';
                 const wagesColRef = collection(db, `artifacts/${appId}/users/${anonymousUid}/wages`);
@@ -495,8 +500,11 @@
                     errorEl.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
                 }
                 console.error("Sign in error:", error);
+            } finally {
+                isSigningIn = false;
+                // If sign-in failed and we're logged out, onAuthStateChanged will handle signing in anonymously
                 if (!auth.currentUser) {
-                    await signInAnonymously(auth);
+                    onAuthStateChanged(auth, user => {}); // Trigger a re-check
                 }
             }
         }
@@ -507,6 +515,7 @@
             const errorEl = document.getElementById('auth-modal-error');
             if (!email || password.length < 6) { errorEl.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน (อย่างน้อย 6 ตัวอักษร)'; return; }
 
+            isSigningIn = true;
             try {
                 const credential = EmailAuthProvider.credential(email, password);
                 await linkWithCredential(auth.currentUser, credential);
@@ -522,6 +531,8 @@
                     errorEl.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
                 }
                 console.error("Link account error:", error);
+            } finally {
+                isSigningIn = false;
             }
         }
 
