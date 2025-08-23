@@ -6,10 +6,7 @@
     <title>แอปบันทึกค่าจ้างรายวัน</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <!-- Libraries for Export & Chart -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
@@ -76,7 +73,6 @@
         </header>
 
         <div id="main-content" class="hidden">
-            <!-- Calendar Section -->
             <div class="card p-4 rounded-lg shadow-lg mb-4">
                 <div class="flex justify-between items-center mb-3">
                     <button id="prev-month" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">&lt;</button>
@@ -95,13 +91,11 @@
                 </div>
             </div>
 
-             <!-- Monthly Total Card -->
-            <div class="card p-4 rounded-lg shadow-lg mb-4 text-center">
+             <div class="card p-4 rounded-lg shadow-lg mb-4 text-center">
                 <h3 class="text-lg font-semibold text-secondary">รายรับรวมเดือนนี้</h3>
                 <p id="monthly-total-display" class="text-3xl font-bold text-green-400 mt-1">0 บาท</p>
             </div>
 
-            <!-- Data Entry Form -->
             <div class="card p-4 rounded-lg shadow-lg mb-4">
                 <h3 class="text-lg font-semibold mb-3">บันทึกข้อมูลสำหรับวันที่: <span id="selected-date-display" class="text-blue-400"></span></h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -125,7 +119,7 @@
                     <div id="special-jobs-container" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3"></div>
                     <div class="flex justify-end items-center mt-3 gap-2">
                         <button id="add-job-type-btn" class="text-sm bg-green-600 hover:bg-green-500 text-white font-bold py-1 px-3 rounded-lg transition">+ เพิ่มประเภทงาน</button>
-                        <button id="edit-prices-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded-lg transition">⚙️ ตั้งค่าราคา</button>
+                        <button id="edit-prices-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded-lg transition" style="display: none;">⚙️ ตั้งค่าราคา</button>
                         <button id="edit-ot-rates-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded-lg transition">⚙️ ตั้งค่า OT</button>
                     </div>
                 </div>
@@ -139,7 +133,6 @@
                 <div class="mb-4">
                     <h4 class="text-lg font-semibold mb-3">รายรับอื่นๆ</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <!-- OT Pre Input -->
                         <div class="card p-2 rounded-lg">
                             <label class="font-medium text-secondary">โอที (ก่อนงาน) <span class="text-xs">(ระบุเป็นชั่วโมง)</span></label>
                             <div class="flex items-center space-x-2 mt-1">
@@ -149,7 +142,6 @@
                                 <span id="ot-pre-total" class="w-20 text-right text-green-400 font-semibold">0 ฿</span>
                             </div>
                         </div>
-                        <!-- OT Post Input -->
                         <div class="card p-2 rounded-lg">
                             <label class="font-medium text-secondary">โอที (หลังงาน) <span class="text-xs">(ระบุเป็นชั่วโมง)</span></label>
                             <div class="flex items-center space-x-2 mt-1">
@@ -159,14 +151,12 @@
                                 <span id="ot-post-total" class="w-20 text-right text-green-400 font-semibold">0 ฿</span>
                             </div>
                         </div>
-                        <!-- OT Holdover -->
                         <div class="card p-2 rounded-lg flex items-center">
                            <button id="ot-holdover-btn" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition">ขึ้นค้างงาน (70฿)</button>
                         </div>
                         <div><label>ค่าอาหารพิเศษ: <input id="special_food" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
                         <div><label>ค่ากะดึก: <input id="night_shift_allowance" type="number" class="w-full input-field rounded p-2 mt-1"></label></div>
-                         <!-- Diligence Allowance Stepper -->
-                        <div id="diligence-container" class="card p-2 rounded-lg" style="display: none;">
+                         <div id="diligence-container" class="card p-2 rounded-lg" style="display: none;">
                             <label class="font-medium text-secondary">เบี้ยขยัน</label>
                             <div class="flex items-center space-x-2 mt-1">
                                 <button id="diligence-minus" class="stepper-btn minus-btn bg-red-600 hover:bg-red-700 rounded-full text-white font-bold transition">-</button>
@@ -210,8 +200,6 @@
                 </div>
                 <div class="flex flex-col sm:flex-row gap-4 mt-6 justify-center">
                     <button id="export-excel-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition">📄 ส่งออก Excel</button>
-                    <button id="export-pdf-btn" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg transition">📕 ส่งออก PDF</button>
-                    <button id="export-slip-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition">🖼️ สร้างสลิปรูปภาพ</button>
                 </div>
             </div>
             
@@ -231,33 +219,13 @@
                 <div class="overflow-x-auto">
                     <table id="details-table" class="w-full text-sm text-left">
                         <thead class="text-xs uppercase table-header">
-                            <!-- Headers are now generated dynamically by JavaScript -->
-                        </thead>
+                            </thead>
                         <tbody id="details-table-body"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Modals -->
-    <div id="slip-period-modal" class="modal"><div class="modal-content">
-        <h3 class="text-xl font-bold mb-4">เลือกรอบบิลสำหรับสลิป</h3>
-        <div class="flex gap-4 mt-6">
-            <button id="slip-period1-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded-lg">รอบ 1-15</button>
-            <button id="slip-period2-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded-lg">รอบ 16-สิ้นเดือน</button>
-        </div>
-         <button id="cancel-slip-period-btn" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">ยกเลิก</button>
-    </div></div>
-
-    <div id="slip-image-modal" class="modal"><div class="modal-content">
-        <h3 class="text-xl font-bold mb-4">สลิปรายรับ</h3>
-        <img id="slip-image" class="w-full rounded-lg border" style="border-color: var(--border-color);" alt="Payslip Image">
-        <div class="flex gap-4 mt-6">
-            <a id="download-slip-btn" href="#" download="payslip.png" class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">ดาวน์โหลด</a>
-            <button id="close-slip-image-btn" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">ปิด</button>
-        </div>
-    </div></div>
 
     <div id="summary-modal" class="modal"><div id="summary-modal-content" class="modal-content transition-colors duration-300">
         <button id="summary-modal-close" class="absolute top-2 right-3 text-2xl font-bold hover:text-gray-400">&times;</button>
@@ -348,9 +316,6 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // --- PDF FONT FIX ---
-        const font = 'AAEAAAARAQAABAAQR0RFRgQs...'; // NOTE: This is a truncated representation. The full string is extremely long.
-
         const firebaseConfig = {
             apiKey: "AIzaSyAoMrrWGRmd9PuyYtGkK7ZQUDZWdgaoYaE",
             authDomain: "daily-wage-tracking.firebaseapp.com",
@@ -1187,7 +1152,7 @@
 
             let html = '';
             let total = 0;
-            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', imv: 'IMV', ot_pre: 'OT ก่อน', ot_post: 'OT หลัง', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
+            const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'OT ก่อน', ot_post: 'OT หลัง', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
 
             const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ');
             if (vehicleText) {
@@ -1233,7 +1198,6 @@
         }
 
         function exportToExcel() { const wb = XLSX.utils.book_new(); const monthName = monthYearEl.textContent; const summaryData = [["สรุปยอด", monthName], [], ["รอบวันที่ 1-15"], ...document.getElementById('summary-period1').innerText.split('\n').map(l => l.split(': ')), ["รวม", document.getElementById('total-period1').innerText], [], ["รอบวันที่ 16-สิ้นเดือน"], ...document.getElementById('summary-period2').innerText.split('\n').map(l => l.split(': ')), ["รวม", document.getElementById('total-period2').innerText]]; const ws1 = XLSX.utils.aoa_to_sheet(summaryData); XLSX.utils.book_append_sheet(wb, ws1, "สรุปยอด"); const table = document.getElementById("details-table"); const ws2 = XLSX.utils.table_to_sheet(table); XLSX.utils.book_append_sheet(wb, ws2, "รายละเอียดรายวัน"); XLSX.writeFile(wb, `สรุปค่าจ้าง-${monthName}.xlsx`); }
-        function exportToPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF({orientation: 'landscape'}); const monthName = monthYearEl.textContent; doc.addFileToVFS('Sarabun-Regular-normal.ttf', font); doc.addFont('Sarabun-Regular-normal.ttf', 'Sarabun-Regular', 'normal'); doc.setFont('Sarabun-Regular'); doc.text(`สรุปค่าจ้างเดือน ${monthName}`, 14, 16); doc.autoTable({ html: '#details-table', startY: 22, theme: 'grid', headStyles: { font: 'Sarabun-Regular', fillColor: [41, 128, 185] }, bodyStyles: { font: 'Sarabun-Regular' } }); doc.save(`สรุปค่าจ้าง-${monthName}.pdf`); }
         
         // --- Event Listeners ---
         function setupEventListeners() {
@@ -1271,12 +1235,6 @@
             specialJobsContainer.addEventListener('click', e => { const input = e.target.closest('div').querySelector('.job-input'); if (!input) return; const step = parseFloat(input.dataset.step) || 1; let value = parseFloat(input.value) || 0; if (e.target.classList.contains('plus-btn')) value += step; if (e.target.classList.contains('minus-btn')) value -= step; input.value = Math.max(0, value); updateAllJobTotals(); });
             specialJobsContainer.addEventListener('input', e => { if (e.target.classList.contains('job-input')) updateAllJobTotals(); });
             document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
-            document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
-            document.getElementById('export-slip-btn').addEventListener('click', () => document.getElementById('slip-period-modal').style.display = 'flex');
-            document.getElementById('cancel-slip-period-btn').addEventListener('click', () => document.getElementById('slip-period-modal').style.display = 'none');
-            document.getElementById('slip-period1-btn').addEventListener('click', () => generateSlipImage(1));
-            document.getElementById('slip-period2-btn').addEventListener('click', () => generateSlipImage(2));
-            document.getElementById('close-slip-image-btn').addEventListener('click', () => document.getElementById('slip-image-modal').style.display = 'none');
             document.getElementById('cancel-auth-btn').addEventListener('click', () => document.getElementById('auth-modal').style.display = 'none');
             document.getElementById('reset-password-btn').addEventListener('click', handlePasswordReset);
             chartYearSelect.addEventListener('change', renderIncomeChart);
