@@ -48,10 +48,16 @@
         .stepper-input { width: 60px; text-align: center; border-radius: 0.375rem; }
         .stepper-btn { width: 36px; height: 36px; font-size: 1.25rem; line-height: 1; }
         .btn-selected { box-shadow: 0 0 0 3px var(--ring-offset-color), 0 0 0 5px #3b82f6; }
-        .summary-bg-day { background-color: #fde68a; color: #1f2937; } html.dark-mode .summary-bg-day { background-color: #78350f; color: #fde68a; }
-        .summary-bg-night { background-color: #a5b4fc; color: #1f2937; } html.dark-mode .summary-bg-night { background-color: #3730a3; color: #a5b4fc; }
-        .summary-bg-force { background-color: #bae6fd; color: #1f2937; } html.dark-mode .summary-bg-force { background-color: #075985; color: #bae6fd; }
-        .summary-bg-tradition { background-color: #fcd34d; color: #1f2937; } html.dark-mode .summary-bg-tradition { background-color: #b45309; color: #fcd34d; }
+        
+        /* Updated Summary Backgrounds */
+        .summary-bg-day-pastel { background-color: #fef9c3; color: #713f12; } 
+        html.dark-mode .summary-bg-day-pastel { background-color: #422006; color: #fef9c3; }
+        .summary-bg-night-pastel { background-color: #e9d5ff; color: #581c87; } 
+        html.dark-mode .summary-bg-night-pastel { background-color: #3b0764; color: #e9d5ff; }
+        .summary-bg-force { background-color: #bae6fd; color: #1f2937; } 
+        html.dark-mode .summary-bg-force { background-color: #075985; color: #bae6fd; }
+        .summary-bg-tradition { background-color: #fcd34d; color: #1f2937; } 
+        html.dark-mode .summary-bg-tradition { background-color: #b45309; color: #fcd34d; }
     </style>
 </head>
 <body class="p-2 sm:p-4">
@@ -119,7 +125,7 @@
                     <div id="special-jobs-container" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3"></div>
                     <div class="flex justify-end items-center mt-3 gap-2">
                         <button id="add-job-type-btn" class="text-sm bg-green-600 hover:bg-green-500 text-white font-bold py-1 px-3 rounded-lg transition">+ เพิ่มประเภทงาน</button>
-                        <button id="edit-prices-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded-lg transition" style="display: none;">⚙️ ตั้งค่าราคา</button>
+                        <button id="edit-prices-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded-lg transition">⚙️ ตั้งค่าราคา</button>
                         <button id="edit-ot-rates-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded-lg transition">⚙️ ตั้งค่า OT</button>
                     </div>
                 </div>
@@ -356,6 +362,9 @@
             dmet: { name: 'DMET', price: 140, step: 1, isDefault: true, type: 'flat' },
             hps: { name: 'HPS', price: 180, step: 1, isDefault: true, type: 'flat' },
             imv: { name: 'IMV', price: [70, 90, 110, 130], step: 1, isDefault: true, type: 'tiered' },
+            n34: { name: 'วิ่งเหล็ก N34', price: 110, step: 1, isDefault: true, type: 'flat' },
+            n34pl: { name: 'วิ่งเหล็ก N34 P/L', price: 140, step: 1, isDefault: true, type: 'flat' },
+            n51: { name: 'วิ่งเหล็ก N51', price: 60, step: 1, isDefault: true, type: 'flat' },
         };
         let jobPrices = { ...defaultJobPrices };
         let shift = 'day';
@@ -413,7 +422,6 @@
                 updateAuthUI(user);
                 main();
             } else {
-                // Only sign in anonymously if we are not in the middle of a sign-in/link process
                 if (!isSigningIn) {
                     signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
                 }
@@ -442,7 +450,7 @@
             const errorEl = modal.querySelector('#auth-modal-error');
             modal.querySelector('#auth-modal-title').textContent = 'เข้าสู่ระบบ หรือ สมัครสมาชิก';
             errorEl.textContent = '';
-            errorEl.className = 'mb-3 text-sm text-red-400'; // Reset to default error color
+            errorEl.className = 'mb-3 text-sm text-red-400';
             const actions = modal.querySelector('#auth-modal-actions');
             actions.innerHTML = `
                 <button id="signin-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">เข้าสู่ระบบ</button>
@@ -502,9 +510,8 @@
                 console.error("Sign in error:", error);
             } finally {
                 isSigningIn = false;
-                // If sign-in failed and we're logged out, onAuthStateChanged will handle signing in anonymously
                 if (!auth.currentUser) {
-                    onAuthStateChanged(auth, user => {}); // Trigger a re-check
+                    onAuthStateChanged(auth, user => {});
                 }
             }
         }
@@ -733,7 +740,121 @@
             renderSpecialJobInputs();
         }
 
-        async function saveJobPrices() { if (!userId) return; const pricesToSave = { ...jobPrices }; for (const key in pricesToSave) { if (Array.isArray(pricesToSave[key].price)) { const prices = []; for (let i = 0; i < pricesToSave[key].price.length; i++) { const inputEl = document.getElementById(`price-input-${key}-${i}`); if(inputEl) prices.push(parseFloat(inputEl.value) || 0); } if(prices.length > 0) pricesToSave[key].price = prices; } else { const inputEl = document.getElementById(`price-input-${key}`); if(inputEl) pricesToSave[key].price = parseFloat(inputEl.value) || 0; } } const docRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'jobPrices'); try { await setDoc(docRef, pricesToSave); await loadSettings(); updateAllJobTotals(); hidePriceModal(); alert('บันทึกราคาใหม่สำเร็จ!'); } catch (error) { console.error("Error saving prices:", error); alert('เกิดข้อผิดพลาดในการบันทึกราคา'); } }
+        function renderAndShowPriceModal() {
+            const modalBody = document.getElementById('price-modal-body');
+            modalBody.innerHTML = ''; // Clear previous content
+
+            Object.entries(jobPrices).forEach(([key, job]) => {
+                const jobEl = document.createElement('div');
+                jobEl.className = 'p-3 border rounded-lg mb-3';
+                jobEl.style.borderColor = 'var(--border-color)';
+                jobEl.dataset.jobKey = key;
+
+                let priceInputHtml = '';
+                if (job.type === 'tiered') {
+                    const tierInputs = job.price.map((p, i) => `
+                        <div class="flex items-center gap-2 mb-2 tier-price-wrapper">
+                            <label class="w-20 text-sm text-secondary">เที่ยวที่ ${i + 1}:</label>
+                            <input type="number" class="price-input-tiered w-full input-field rounded p-2" value="${p}">
+                        </div>
+                    `).join('');
+                    priceInputHtml = `
+                        <div class="tiered-prices-container">${tierInputs}</div>
+                        <button type="button" class="add-tier-btn text-sm text-green-400 hover:underline mt-1">+ เพิ่มขั้น</button>
+                    `;
+                } else {
+                    priceInputHtml = `<input type="number" class="price-input-flat w-full input-field rounded p-2" value="${job.price}">`;
+                }
+
+                jobEl.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="font-semibold">ชื่อประเภทงาน:</label>
+                        ${job.isDefault ? '' : `<button type="button" class="delete-job-btn text-red-500 hover:text-red-400 text-xs font-bold">ลบ</button>`}
+                    </div>
+                    <input type="text" class="job-name-input w-full input-field rounded p-2 mb-2" value="${job.name}" ${job.isDefault ? 'disabled' : ''}>
+                    <label class="font-semibold text-sm">ราคา:</label>
+                    ${priceInputHtml}
+                `;
+                modalBody.appendChild(jobEl);
+            });
+
+            modalBody.querySelectorAll('.delete-job-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบประเภทงานนี้?')) {
+                        e.target.closest('[data-job-key]').remove();
+                    }
+                });
+            });
+
+            modalBody.querySelectorAll('.add-tier-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const container = e.target.previousElementSibling;
+                    const newTier = document.createElement('div');
+                    newTier.className = 'flex items-center gap-2 mb-2 tier-price-wrapper';
+                    newTier.innerHTML = `
+                        <label class="w-20 text-sm text-secondary">เที่ยวที่ ${container.children.length + 1}:</label>
+                        <input type="number" class="price-input-tiered w-full input-field rounded p-2" value="">
+                    `;
+                    container.appendChild(newTier);
+                });
+            });
+
+            document.getElementById('price-modal').style.display = 'flex';
+        }
+
+        async function saveJobPrices() {
+            if (!userId) return;
+            
+            const newJobPrices = {};
+            const modalBody = document.getElementById('price-modal-body');
+            const jobElements = modalBody.querySelectorAll('[data-job-key]');
+
+            for (const jobEl of jobElements) {
+                const key = jobEl.dataset.jobKey;
+                const originalJob = jobPrices[key] || {};
+
+                const name = jobEl.querySelector('.job-name-input').value.trim();
+                if (!name) {
+                    alert('ชื่อประเภทงานห้ามว่าง');
+                    return;
+                }
+
+                let price;
+                if (originalJob.type === 'tiered') {
+                    price = [];
+                    jobEl.querySelectorAll('.price-input-tiered').forEach(input => {
+                        const val = parseFloat(input.value);
+                        if (!isNaN(val)) {
+                            price.push(val);
+                        }
+                    });
+                } else {
+                    const priceVal = parseFloat(jobEl.querySelector('.price-input-flat').value);
+                    price = isNaN(priceVal) ? 0 : priceVal;
+                }
+                
+                newJobPrices[key] = {
+                    ...originalJob,
+                    name: name,
+                    price: price,
+                };
+            }
+            
+            jobPrices = newJobPrices;
+
+            const docRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'jobPrices');
+            try {
+                await setDoc(docRef, jobPrices);
+                await loadSettings();
+                renderSpecialJobInputs();
+                updateAllJobTotals();
+                hidePriceModal();
+                alert('บันทึกการตั้งค่าราคาสำเร็จ!');
+            } catch (error) {
+                console.error("Error saving prices:", error);
+                alert('เกิดข้อผิดพลาดในการบันทึกราคา');
+            }
+        }
         
         async function saveOtRates() {
             if (!userId) return;
@@ -792,22 +913,15 @@
                 dayEl.dataset.date = dateStr;
                 dayEl.className = 'p-2 text-center cursor-pointer calendar-day aspect-square flex items-center justify-center';
                 
-                const dayOfWeek = new Date(year, month, day).getDay(); // 0=Sun, 6=Sat
-                if (dayOfWeek === 0) { // Sunday
-                    dayEl.classList.add('text-red-500', 'font-semibold');
-                } else if (dayOfWeek === 6) { // Saturday
-                    dayEl.classList.add('text-purple-500', 'font-semibold');
-                }
+                const dayOfWeek = new Date(year, month, day).getDay();
+                if (dayOfWeek === 0) { dayEl.classList.add('text-red-500', 'font-semibold'); } 
+                else if (dayOfWeek === 6) { dayEl.classList.add('text-purple-500', 'font-semibold'); }
 
                 const data = monthlyData[dateStr];
                 if (data) {
-                    if (data.shift === 'force') {
-                        dayEl.classList.add('force-day');
-                    } else if (data.shift === 'tradition') {
-                        dayEl.classList.add('tradition-day');
-                    } else {
-                        dayEl.classList.add('work-day');
-                    }
+                    if (data.shift === 'force') { dayEl.classList.add('force-day'); } 
+                    else if (data.shift === 'tradition') { dayEl.classList.add('tradition-day'); } 
+                    else { dayEl.classList.add('work-day'); }
                     
                     if (data.shift !== 'force' && data.shift !== 'tradition') {
                         const shiftIcon = document.createElement('span');
@@ -823,12 +937,8 @@
                          dayEl.appendChild(multiplierIcon);
                     }
                 }
-                if (dateStr === todayStr) {
-                    dayEl.classList.add('today');
-                }
-                if (selectedDate && dateStr === selectedDate) {
-                    dayEl.classList.add('selected-day');
-                }
+                if (dateStr === todayStr) { dayEl.classList.add('today'); }
+                if (selectedDate && dateStr === selectedDate) { dayEl.classList.add('selected-day'); }
                 dayEl.addEventListener('click', () => selectDate(dateStr));
                 calendarEl.appendChild(dayEl);
             }
@@ -925,16 +1035,10 @@
         function calculateAndApplyValues() {
             const isSpecialDay = shift === 'force' || shift === 'tradition';
 
-            // Set wage based on type
-            if (shift === 'force') {
-                inputs.wage.value = FORCE_WAGE;
-            } else if (shift === 'tradition') {
-                inputs.wage.value = TRADITION_WAGE;
-            } else {
-                inputs.wage.value = BASE_WAGE * payMultiplier;
-            }
+            if (shift === 'force') { inputs.wage.value = FORCE_WAGE; } 
+            else if (shift === 'tradition') { inputs.wage.value = TRADITION_WAGE; } 
+            else { inputs.wage.value = BASE_WAGE * payMultiplier; }
 
-            // Enable/disable fields
             const fieldsToToggle = [inputs.travel, inputs.food, inputs.night_shift_allowance, otPreHoursInput, otPostHoursInput];
             fieldsToToggle.forEach(field => field.disabled = isSpecialDay);
             document.querySelectorAll('.pay-multiplier-btn, #ot-pre-plus, #ot-pre-minus, #ot-post-plus, #ot-post-minus, #ot-holdover-btn').forEach(btn => btn.disabled = isSpecialDay);
@@ -1008,24 +1112,16 @@
             inputIds.forEach(id => { const value = inputs[id].type === 'number' ? parseFloat(inputs[id].value) : inputs[id].value; if (inputs[id].value.trim() !== '') { data[id] = isNaN(value) ? inputs[id].value : value; hasValue = true; } else { data[id] = null; } });
             
             const diligenceValue = parseFloat(diligenceInput.value) || 0;
-            if (diligenceValue > 0) {
-                data.diligence_allowance = diligenceValue;
-                hasValue = true;
-            } else {
-                data.diligence_allowance = null;
-            }
+            if (diligenceValue > 0) { data.diligence_allowance = diligenceValue; hasValue = true; } 
+            else { data.diligence_allowance = null; }
 
             const preHours = parseFloat(otPreHoursInput.value) || 0;
             const postHours = parseFloat(otPostHoursInput.value) || 0;
             if (preHours > 0) { data.ot_pre_hours = preHours; data.ot_pre = preHours * otPreRate; hasValue = true; } else { data.ot_pre_hours = null; data.ot_pre = null; }
             if (postHours > 0) { data.ot_post_hours = postHours; data.ot_post = postHours * otPostRate; hasValue = true; } else { data.ot_post_hours = null; data.ot_post = null; }
             
-            if (otHoldoverActive) {
-                data.ot_holdover = OT_HOLDOVER_RATE;
-                hasValue = true;
-            } else {
-                data.ot_holdover = null;
-            }
+            if (otHoldoverActive) { data.ot_holdover = OT_HOLDOVER_RATE; hasValue = true; } 
+            else { data.ot_holdover = null; }
 
             document.querySelectorAll('.job-input').forEach(input => { const key = input.dataset.jobKey; const value = parseFloat(input.value); if (!isNaN(value) && value > 0) { data[`job_${key}`] = value; hasValue = true; } else { data[`job_${key}`] = null; } });
             
@@ -1101,7 +1197,6 @@
 
         function showDeleteModal() { if (!selectedDate) { alert('กรุณาเลือกวันที่ต้องการลบ'); return; } const modal = document.getElementById('delete-modal'); const localDate = new Date(selectedDate + 'T00:00:00'); modal.querySelector('#delete-date-confirm').textContent = localDate.toLocaleDateString('th-TH'); modal.style.display = 'flex'; }
         function hideDeleteModal() { document.getElementById('delete-modal').style.display = 'none'; }
-        function showPriceModal() { const modal = document.getElementById('price-modal'); modal.style.display = 'flex'; }
         function hidePriceModal() { document.getElementById('price-modal').style.display = 'none'; }
         function showOtRateModal() { 
             document.getElementById('ot-pre-rate-input').value = otPreRate;
@@ -1136,8 +1231,7 @@
             jobPrices[key] = { name: name, price: price, step: 1, isDefault: false, type: priceType };
 
             document.getElementById('add-job-modal').style.display = 'none';
-            renderSpecialJobInputs();
-            showPriceModal(); 
+            renderAndShowPriceModal(); 
         }
 
         function addNewJobType() {
@@ -1182,10 +1276,10 @@
                 const count = parseFloat(data[`job_${key}`]) || 0;
                 if (count > 0) {
                     let jobTotal = 0;
-                    if (jobPrices[key].type === 'tiered' && Array.isArray(jobPrices[key].price)) {
+                    if (jobPrices[key]?.type === 'tiered' && Array.isArray(jobPrices[key].price)) {
                         jobTotal = calculateTieredTotal(count, jobPrices[key].price);
                     } else {
-                        jobTotal = count * (jobPrices[key].price || 0);
+                        jobTotal = count * (jobPrices[key]?.price || 0);
                     }
                     html += `<p>${jobPrices[key].name}: <span class="float-right font-semibold">${jobTotal.toLocaleString()}</span></p>`;
                     total += jobTotal;
@@ -1194,12 +1288,11 @@
             bodyEl.innerHTML = html;
             totalEl.textContent = `${total.toLocaleString()} บาท`;
 
-            // Set background color
-            content.className = 'modal-content transition-colors duration-300'; // Reset
-            if (data.shift === 'day') content.classList.add('summary-bg-day');
-            else if (data.shift === 'night') content.classList.add('summary-bg-night');
-            else if (data.shift === 'force') content.classList.add('summary-bg-force');
-            else if (data.shift === 'tradition') content.classList.add('summary-bg-tradition');
+            content.classList.remove('summary-bg-day-pastel', 'summary-bg-night-pastel', 'summary-bg-force', 'summary-bg-tradition');
+            if (data.shift === 'day') { content.classList.add('summary-bg-day-pastel'); }
+            else if (data.shift === 'night') { content.classList.add('summary-bg-night-pastel'); }
+            else if (data.shift === 'force') { content.classList.add('summary-bg-force'); }
+            else if (data.shift === 'tradition') { content.classList.add('summary-bg-tradition'); }
 
             modal.style.display = 'flex';
         }
@@ -1218,7 +1311,7 @@
             document.getElementById('delete-btn').addEventListener('click', showDeleteModal);
             document.getElementById('confirm-delete-btn').addEventListener('click', deleteData);
             document.getElementById('cancel-delete-btn').addEventListener('click', hideDeleteModal);
-            document.getElementById('edit-prices-btn').addEventListener('click', showPriceModal);
+            document.getElementById('edit-prices-btn').addEventListener('click', renderAndShowPriceModal);
             document.getElementById('save-prices-btn').addEventListener('click', saveJobPrices);
             document.getElementById('cancel-prices-btn').addEventListener('click', hidePriceModal);
             document.getElementById('edit-ot-rates-btn').addEventListener('click', showOtRateModal);
@@ -1228,7 +1321,6 @@
             document.getElementById('add-job-type-in-modal-btn').addEventListener('click', addNewJobType);
             document.getElementById('save-new-job-btn').addEventListener('click', handleAddNewJobFromModal);
             document.getElementById('cancel-new-job-btn').addEventListener('click', () => { document.getElementById('add-job-modal').style.display = 'none'; });
-            document.getElementById('price-modal').querySelector('#price-modal-body').addEventListener('click', e => { if (e.target.classList.contains('delete-job-btn')) { const key = e.target.dataset.key; if (key && confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบประเภทงาน "${jobPrices[key].name}"?`)) { delete jobPrices[key]; showPriceModal(); } } });
             
             document.getElementById('day-shift-btn').addEventListener('click', () => { shift = 'day'; updatePrimaryButtonsUI(); calculateAndApplyValues(); });
             document.getElementById('night-shift-btn').addEventListener('click', () => { shift = 'night'; updatePrimaryButtonsUI(); calculateAndApplyValues(); });
