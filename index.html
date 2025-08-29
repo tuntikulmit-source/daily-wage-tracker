@@ -49,7 +49,6 @@
         .stepper-btn { width: 36px; height: 36px; font-size: 1.25rem; line-height: 1; }
         .btn-selected { box-shadow: 0 0 0 3px var(--ring-offset-color), 0 0 0 5px #3b82f6; }
         
-        /* Updated Summary Backgrounds */
         .summary-bg-day-pastel { background-color: #fef9c3; color: #713f12; } 
         html.dark-mode .summary-bg-day-pastel { background-color: #422006; color: #fef9c3; }
         .summary-bg-night-pastel { background-color: #e9d5ff; color: #581c87; } 
@@ -118,9 +117,9 @@
                 <div class="border-b pb-4 mb-4" style="border-color: var(--border-color);">
                     <h4 class="text-lg font-semibold mb-3">รายรับพื้นฐานและเที่ยววิ่ง</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div><label>ค่าจ้าง: <input id="wage" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="372"></label></div>
-                        <div><label>ค่าเดินทาง: <input id="travel" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="60"></label></div>
-                        <div><label>ค่าอาหาร: <input id="food" type="number" class="w-full input-field rounded p-2 mt-1" placeholder="50"></label></div>
+                        <div><label>ค่าจ้าง: <input id="wage" type="number" class="w-full input-field rounded p-2 mt-1" placeholder=""></label></div>
+                        <div><label>ค่าเดินทาง: <input id="travel" type="number" class="w-full input-field rounded p-2 mt-1" placeholder=""></label></div>
+                        <div><label>ค่าอาหาร: <input id="food" type="number" class="w-full input-field rounded p-2 mt-1" placeholder=""></label></div>
                     </div>
                     <div id="special-jobs-container" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3"></div>
                     <div class="flex justify-end items-center mt-3 gap-2">
@@ -371,7 +370,7 @@
         let payMultiplier = 1;
         let otHoldoverActive = false;
         let incomeChart;
-        let isSigningIn = false; // Flag to manage auth state changes
+        let isSigningIn = false;
 
         // --- DOM Elements ---
         const mainContentEl = document.getElementById('main-content');
@@ -406,11 +405,7 @@
                 sunIcon.style.display = 'block';
                 moonIcon.style.display = 'none';
             }
-            setTimeout(() => {
-                if (incomeChart) {
-                    renderIncomeChart();
-                }
-            }, 50);
+            setTimeout(() => { if (incomeChart) { renderIncomeChart(); } }, 50);
         }
         
         // --- Authentication ---
@@ -452,10 +447,7 @@
             errorEl.textContent = '';
             errorEl.className = 'mb-3 text-sm text-red-400';
             const actions = modal.querySelector('#auth-modal-actions');
-            actions.innerHTML = `
-                <button id="signin-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">เข้าสู่ระบบ</button>
-                <button id="link-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">สมัครและเชื่อมต่อ</button>
-            `;
+            actions.innerHTML = `<button id="signin-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">เข้าสู่ระบบ</button><button id="link-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">สมัครและเชื่อมต่อ</button>`;
             document.getElementById('signin-btn').addEventListener('click', handleSignIn);
             document.getElementById('link-btn').addEventListener('click', handleLinkAccount);
             modal.style.display = 'flex';
@@ -510,9 +502,7 @@
                 console.error("Sign in error:", error);
             } finally {
                 isSigningIn = false;
-                if (!auth.currentUser) {
-                    onAuthStateChanged(auth, user => {});
-                }
+                if (!auth.currentUser) { onAuthStateChanged(auth, user => {}); }
             }
         }
 
@@ -530,13 +520,9 @@
                 document.getElementById('auth-modal').style.display = 'none';
             } catch (error) {
                  errorEl.className = 'mb-3 text-sm text-red-400';
-                if (error.code === 'auth/email-already-in-use') {
-                    errorEl.textContent = 'อีเมลนี้ถูกใช้แล้ว กรุณาเลือก "เข้าสู่ระบบ"';
-                } else if (error.code === 'auth/weak-password') {
-                     errorEl.textContent = 'รหัสผ่านไม่ปลอดภัย (ต้องมีอย่างน้อย 6 ตัวอักษร)';
-                } else {
-                    errorEl.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
-                }
+                if (error.code === 'auth/email-already-in-use') { errorEl.textContent = 'อีเมลนี้ถูกใช้แล้ว กรุณาเลือก "เข้าสู่ระบบ"'; } 
+                else if (error.code === 'auth/weak-password') { errorEl.textContent = 'รหัสผ่านไม่ปลอดภัย (ต้องมีอย่างน้อย 6 ตัวอักษร)';} 
+                else { errorEl.textContent = 'เกิดข้อผิดพลาด: ' + error.message; }
                 console.error("Link account error:", error);
             } finally {
                 isSigningIn = false;
@@ -578,9 +564,7 @@
             if (currentSelectedYear && availableDates[currentSelectedYear]) {
                 const sortedMonths = Array.from(availableDates[currentSelectedYear]).sort((a, b) => b - a);
                 chartMonthSelect.innerHTML = sortedMonths.map(m => `<option value="${m}">${new Date(2000, m - 1, 1).toLocaleString('th-TH', { month: 'long' })}</option>`).join('');
-            } else {
-                 chartMonthSelect.innerHTML = '';
-            }
+            } else { chartMonthSelect.innerHTML = ''; }
             
             const now = new Date();
             const currentYear = now.getFullYear().toString();
@@ -593,7 +577,6 @@
                     chartMonthSelect.value = currentMonth;
                 }
             }
-            
             renderIncomeChart();
         }
         
@@ -602,9 +585,7 @@
             const month = chartMonthSelect.value;
             const ctx = document.getElementById('income-chart').getContext('2d');
             
-            if (incomeChart) {
-                incomeChart.destroy();
-            }
+            if (incomeChart) { incomeChart.destroy(); }
 
             if (!year || !month) {
                 ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -631,10 +612,10 @@
                         const count = parseFloat(data[`job_${key}`]) || 0;
                         if (count > 0) {
                             let jobTotal = 0;
-                            if (jobPrices[key].type === 'tiered' && Array.isArray(jobPrices[key].price)) {
+                            if (jobPrices[key]?.type === 'tiered' && Array.isArray(jobPrices[key].price)) {
                                 jobTotal = calculateTieredTotal(count, jobPrices[key].price);
                             } else {
-                                jobTotal = count * (jobPrices[key].price || 0);
+                                jobTotal = count * (jobPrices[key]?.price || 0);
                             }
                             const label = jobPrices[key].name;
                             chartData[label] = (chartData[label] || 0) + jobTotal;
@@ -660,13 +641,7 @@
                     labels: Object.keys(chartData),
                     datasets: [{ data: Object.values(chartData), backgroundColor: chartColors, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-secondary'), borderWidth: 2 }]
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'top', labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary'), font: { family: 'Kanit' } } },
-                        tooltip: { callbacks: { label: (c) => `${c.label || ''}: ${new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(c.parsed)}` } }
-                    }
-                }
+                options: { responsive: true, plugins: { legend: { position: 'top', labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary'), font: { family: 'Kanit' } } }, tooltip: { callbacks: { label: (c) => `${c.label || ''}: ${new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(c.parsed)}` } } } }
             });
         }
         
@@ -752,92 +727,68 @@
 
                 let priceInputHtml = '';
                 if (job.type === 'tiered') {
-                    const tierInputs = job.price.map((p, i) => `
+                    const tierInputs = (job.price || []).map((p, i) => `
                         <div class="flex items-center gap-2 mb-2 tier-price-wrapper">
                             <label class="w-20 text-sm text-secondary">เที่ยวที่ ${i + 1}:</label>
                             <input type="number" class="price-input-tiered w-full input-field rounded p-2" value="${p}">
                         </div>
                     `).join('');
-                    priceInputHtml = `
-                        <div class="tiered-prices-container">${tierInputs}</div>
-                        <button type="button" class="add-tier-btn text-sm text-green-400 hover:underline mt-1">+ เพิ่มขั้น</button>
-                    `;
+                    priceInputHtml = `<div class="tiered-prices-container">${tierInputs}</div><button type="button" class="add-tier-btn text-sm text-green-400 hover:underline mt-1">+ เพิ่มขั้น</button>`;
                 } else {
-                    priceInputHtml = `<input type="number" class="price-input-flat w-full input-field rounded p-2" value="${job.price}">`;
+                    priceInputHtml = `<input type="number" class="price-input-flat w-full input-field rounded p-2" value="${job.price || ''}">`;
                 }
 
                 jobEl.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
-                        <label class="font-semibold">ชื่อประเภทงาน:</label>
-                        ${job.isDefault ? '' : `<button type="button" class="delete-job-btn text-red-500 hover:text-red-400 text-xs font-bold">ลบ</button>`}
+                        <input type="text" class="job-name-input w-full input-field rounded p-2" value="${job.name}" ${job.isDefault ? 'disabled' : ''}>
+                        ${job.isDefault ? '' : `<button type="button" class="delete-job-btn text-red-500 hover:text-red-400 text-lg font-bold ml-3 px-2">&times;</button>`}
                     </div>
-                    <input type="text" class="job-name-input w-full input-field rounded p-2 mb-2" value="${job.name}" ${job.isDefault ? 'disabled' : ''}>
                     <label class="font-semibold text-sm">ราคา:</label>
                     ${priceInputHtml}
                 `;
                 modalBody.appendChild(jobEl);
             });
 
-            modalBody.querySelectorAll('.delete-job-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบประเภทงานนี้?')) {
-                        e.target.closest('[data-job-key]').remove();
-                    }
-                });
-            });
+            modalBody.querySelectorAll('.delete-job-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบประเภทงานนี้?')) { e.target.closest('[data-job-key]').remove(); }
+            }));
 
-            modalBody.querySelectorAll('.add-tier-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const container = e.target.previousElementSibling;
-                    const newTier = document.createElement('div');
-                    newTier.className = 'flex items-center gap-2 mb-2 tier-price-wrapper';
-                    newTier.innerHTML = `
-                        <label class="w-20 text-sm text-secondary">เที่ยวที่ ${container.children.length + 1}:</label>
-                        <input type="number" class="price-input-tiered w-full input-field rounded p-2" value="">
-                    `;
-                    container.appendChild(newTier);
-                });
-            });
+            modalBody.querySelectorAll('.add-tier-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                const container = e.target.previousElementSibling;
+                const newTier = document.createElement('div');
+                newTier.className = 'flex items-center gap-2 mb-2 tier-price-wrapper';
+                newTier.innerHTML = `<label class="w-20 text-sm text-secondary">เที่ยวที่ ${container.children.length + 1}:</label><input type="number" class="price-input-tiered w-full input-field rounded p-2" value="">`;
+                container.appendChild(newTier);
+            }));
 
             document.getElementById('price-modal').style.display = 'flex';
         }
 
         async function saveJobPrices() {
             if (!userId) return;
-            
             const newJobPrices = {};
             const modalBody = document.getElementById('price-modal-body');
             const jobElements = modalBody.querySelectorAll('[data-job-key]');
 
             for (const jobEl of jobElements) {
                 const key = jobEl.dataset.jobKey;
-                const originalJob = jobPrices[key] || {};
-
+                const originalJob = defaultJobPrices[key] || jobPrices[key] || {};
                 const name = jobEl.querySelector('.job-name-input').value.trim();
-                if (!name) {
-                    alert('ชื่อประเภทงานห้ามว่าง');
-                    return;
-                }
+                if (!name) { alert('ชื่อประเภทงานห้ามว่าง'); return; }
 
                 let price;
                 if (originalJob.type === 'tiered') {
                     price = [];
                     jobEl.querySelectorAll('.price-input-tiered').forEach(input => {
                         const val = parseFloat(input.value);
-                        if (!isNaN(val)) {
-                            price.push(val);
-                        }
+                        if (!isNaN(val)) { price.push(val); }
                     });
                 } else {
                     const priceVal = parseFloat(jobEl.querySelector('.price-input-flat').value);
                     price = isNaN(priceVal) ? 0 : priceVal;
                 }
                 
-                newJobPrices[key] = {
-                    ...originalJob,
-                    name: name,
-                    price: price,
-                };
+                newJobPrices[key] = { ...originalJob, name, price };
             }
             
             jobPrices = newJobPrices;
@@ -846,7 +797,6 @@
             try {
                 await setDoc(docRef, jobPrices);
                 await loadSettings();
-                renderSpecialJobInputs();
                 updateAllJobTotals();
                 hidePriceModal();
                 alert('บันทึกการตั้งค่าราคาสำเร็จ!');
@@ -880,7 +830,7 @@
             }
         }
 
-        function renderSpecialJobInputs() { specialJobsContainer.innerHTML = ''; for (const key in jobPrices) { const job = jobPrices[key]; const div = document.createElement('div'); div.className = 'flex items-center justify-between card p-2 rounded-lg'; div.innerHTML = `<label for="job-${key}" class="font-medium text-secondary">${job.name}</label><div class="flex items-center space-x-2"><button class="stepper-btn minus-btn bg-red-600 hover:bg-red-700 rounded-full text-white font-bold transition">-</button><input type="number" id="job-${key}" data-job-key="${key}" data-step="${job.step}" class="stepper-input job-input p-1" placeholder=""><button class="stepper-btn plus-btn bg-green-600 hover:bg-green-700 rounded-full text-white font-bold transition">+</button><span id="job-total-${key}" class="w-20 text-right text-green-400 font-semibold">0 ฿</span></div>`; specialJobsContainer.appendChild(div); } }
+        function renderSpecialJobInputs() { specialJobsContainer.innerHTML = ''; Object.entries(jobPrices).forEach(([key, job]) => { const div = document.createElement('div'); div.className = 'flex items-center justify-between card p-2 rounded-lg'; div.innerHTML = `<label for="job-${key}" class="font-medium text-secondary">${job.name}</label><div class="flex items-center space-x-2"><button class="stepper-btn minus-btn bg-red-600 hover:bg-red-700 rounded-full text-white font-bold transition">-</button><input type="number" id="job-${key}" data-job-key="${key}" data-step="${job.step}" class="stepper-input job-input p-1" placeholder=""><button class="stepper-btn plus-btn bg-green-600 hover:bg-green-700 rounded-full text-white font-bold transition">+</button><span id="job-total-${key}" class="w-20 text-right text-green-400 font-semibold">0 ฿</span></div>`; specialJobsContainer.appendChild(div); }); }
         
         function calculateTieredTotal(count, prices) {
             if (count <= 0 || !prices || prices.length === 0) return 0;
@@ -892,7 +842,7 @@
             return total;
         }
 
-        function updateAllJobTotals() { document.querySelectorAll('.job-input').forEach(input => { const key = input.dataset.jobKey; const value = parseFloat(input.value) || 0; const job = jobPrices[key]; let total = 0; if (job.type === 'tiered' && Array.isArray(job.price)) { total = calculateTieredTotal(value, job.price); } else { total = value * (job.price || 0); } const totalEl = document.getElementById(`job-total-${key}`); if (totalEl) totalEl.textContent = `${total.toLocaleString()} ฿`; }); }
+        function updateAllJobTotals() { document.querySelectorAll('.job-input').forEach(input => { const key = input.dataset.jobKey; const value = parseFloat(input.value) || 0; const job = jobPrices[key]; let total = 0; if (job?.type === 'tiered' && Array.isArray(job.price)) { total = calculateTieredTotal(value, job.price); } else { total = value * (job?.price || 0); } const totalEl = document.getElementById(`job-total-${key}`); if (totalEl) totalEl.textContent = `${total.toLocaleString()} ฿`; }); }
         
         function generateCalendar(year, month) {
             calendarEl.innerHTML = '';
@@ -902,9 +852,7 @@
             const todayObj = new Date();
             const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
 
-            for (let i = 0; i < firstDay; i++) {
-                calendarEl.appendChild(document.createElement('div'));
-            }
+            for (let i = 0; i < firstDay; i++) { calendarEl.appendChild(document.createElement('div')); }
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('div');
@@ -929,7 +877,6 @@
                         shiftIcon.textContent = data.shift === 'night' ? '🌙' : '☀️';
                         dayEl.appendChild(shiftIcon);
                     }
-                    
                     if (data.payMultiplier && data.payMultiplier > 1) {
                          const multiplierIcon = document.createElement('span');
                          multiplierIcon.className = 'multiplier-icon';
@@ -950,12 +897,7 @@
             selectedDateDisplay.textContent = localDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }); 
             
             const lastDayOfMonth = new Date(localDate.getFullYear(), localDate.getMonth() + 1, 0).getDate();
-            if (localDate.getDate() === lastDayOfMonth) {
-                diligenceContainer.style.display = 'block';
-            } else {
-                diligenceContainer.style.display = 'none';
-                diligenceInput.value = 0;
-            }
+            diligenceContainer.style.display = (localDate.getDate() === lastDayOfMonth) ? 'block' : 'none';
 
             updateCalendarHighlights(); 
 
@@ -967,7 +909,8 @@
         }
 
         function updateCalendarHighlights() { document.querySelectorAll('.calendar-day').forEach(el => { el.classList.remove('selected-day'); if (el.dataset.date === selectedDate) el.classList.add('selected-day'); }); }
-        async function loadDataForDate(dateStr) {
+        
+        function loadDataForDate(dateStr) {
             clearForm();
             const data = allTimeData[dateStr];
             if (data) {
@@ -976,26 +919,21 @@
                 otHoldoverActive = !!data.ot_holdover;
 
                 inputIds.forEach(id => { if (data[id] != null) inputs[id].value = data[id]; });
-                
                 diligenceInput.value = data.diligence_allowance || 0;
-
-                const preHours = data.ot_pre_hours ?? (data.ot_pre ? data.ot_pre / otPreRate : 0);
-                const postHours = data.ot_post_hours ?? (data.ot_post ? data.ot_post / otPostRate : 0);
-                otPreHoursInput.value = preHours;
-                otPostHoursInput.value = postHours;
+                otPreHoursInput.value = data.ot_pre_hours ?? (data.ot_pre ? data.ot_pre / otPreRate : 0);
+                otPostHoursInput.value = data.ot_post_hours ?? (data.ot_post ? data.ot_post / otPostRate : 0);
 
                 for (const key in jobPrices) { const inputEl = document.getElementById(`job-${key}`); if (inputEl && data[`job_${key}`] != null) inputEl.value = data[`job_${key}`]; }
-                
             } else {
                 shift = 'day';
                 payMultiplier = 1;
                 otHoldoverActive = false;
-                setDefaults();
             }
             updatePrimaryButtonsUI();
             calculateAndApplyValues();
             updateAllJobTotals();
         }
+
         function clearForm() { 
             inputIds.forEach(id => inputs[id].value = ''); 
             otPreHoursInput.value = 0; 
@@ -1005,60 +943,49 @@
             shift = 'day'; 
             payMultiplier = 1;
             otHoldoverActive = false;
-            updatePrimaryButtonsUI();
-            calculateAndApplyValues();
-            updateAllJobTotals();
-        }
-        function setDefaults() { 
-            inputs.travel.value = 60; 
-            inputs.food.value = 50; 
         }
         
         function updatePrimaryButtonsUI() {
             document.querySelectorAll('.grid button[id$="-btn"]').forEach(btn => btn.classList.remove('btn-selected'));
-            
-            if (shift === 'day' || shift === 'night') {
-                document.getElementById(`${shift}-shift-btn`)?.classList.add('btn-selected');
-            } else {
-                document.getElementById(`${shift}-day-btn`)?.classList.add('btn-selected');
-            }
-            
+            if (shift === 'day' || shift === 'night') { document.getElementById(`${shift}-shift-btn`)?.classList.add('btn-selected'); } 
+            else { document.getElementById(`${shift}-day-btn`)?.classList.add('btn-selected'); }
             document.querySelector(`.pay-multiplier-btn[data-multiplier="${payMultiplier}"]`)?.classList.add('btn-selected');
-            
-            if(otHoldoverActive) {
-                otHoldoverBtn.classList.add('btn-selected');
-            } else {
-                otHoldoverBtn.classList.remove('btn-selected');
-            }
+            otHoldoverBtn.classList.toggle('btn-selected', otHoldoverActive);
         }
 
         function calculateAndApplyValues() {
+            if (!selectedDate) return;
+            const dateObj = new Date(selectedDate + 'T00:00:00');
+            const dayOfWeek = dateObj.getDay();
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
             const isSpecialDay = shift === 'force' || shift === 'tradition';
-
-            if (shift === 'force') { inputs.wage.value = FORCE_WAGE; } 
-            else if (shift === 'tradition') { inputs.wage.value = TRADITION_WAGE; } 
-            else { inputs.wage.value = BASE_WAGE * payMultiplier; }
 
             const fieldsToToggle = [inputs.travel, inputs.food, inputs.night_shift_allowance, otPreHoursInput, otPostHoursInput];
             fieldsToToggle.forEach(field => field.disabled = isSpecialDay);
             document.querySelectorAll('.pay-multiplier-btn, #ot-pre-plus, #ot-pre-minus, #ot-post-plus, #ot-post-minus, #ot-holdover-btn').forEach(btn => btn.disabled = isSpecialDay);
 
             if (isSpecialDay) {
+                inputs.wage.value = (shift === 'force') ? FORCE_WAGE : TRADITION_WAGE;
                 inputs.travel.value = '';
                 inputs.food.value = '';
                 inputs.night_shift_allowance.value = '';
                 otPreHoursInput.value = 0;
                 otPostHoursInput.value = 0;
                 otHoldoverActive = false;
+            } else if (isWeekend && !allTimeData[selectedDate]) {
+                inputs.wage.value = '';
+                inputs.travel.value = '';
+                inputs.food.value = '';
+                if (shift === 'night' && !inputs.night_shift_allowance.value) { inputs.night_shift_allowance.value = 100; } 
+                else if (shift === 'day') { inputs.night_shift_allowance.value = ''; }
             } else {
-                if (!inputs.travel.value) inputs.travel.value = 60;
-                if (!inputs.food.value) inputs.food.value = 50;
-                if (shift === 'night' && !inputs.night_shift_allowance.value) {
-                    inputs.night_shift_allowance.value = 100;
-                } else if (shift === 'day') {
-                    inputs.night_shift_allowance.value = '';
-                }
+                inputs.wage.value = BASE_WAGE * payMultiplier;
+                inputs.travel.value = 60;
+                inputs.food.value = 50;
+                if (shift === 'night' && !inputs.night_shift_allowance.value) { inputs.night_shift_allowance.value = 100; } 
+                else if (shift === 'day') { inputs.night_shift_allowance.value = ''; }
             }
+            
             updateOTUI();
             updateHoldoverOTState();
         }
@@ -1066,41 +993,30 @@
         function updateOTUI() {
             const preHours = parseFloat(otPreHoursInput.value) || 0;
             const postHours = parseFloat(otPostHoursInput.value) || 0;
-            
             document.getElementById('ot-pre-total').textContent = `${(preHours * otPreRate).toLocaleString()} ฿`;
             document.getElementById('ot-post-total').textContent = `${(postHours * otPostRate).toLocaleString()} ฿`;
-
-            if (postHours >= 2 && (!inputs.special_food.value || parseFloat(inputs.special_food.value) === 0)) {
-                inputs.special_food.value = SPECIAL_FOOD_ALLOWANCE;
-            } else if (postHours < 2 && parseFloat(inputs.special_food.value) === SPECIAL_FOOD_ALLOWANCE) {
-                inputs.special_food.value = '';
-            }
+            if (postHours >= 2 && !inputs.special_food.value) { inputs.special_food.value = SPECIAL_FOOD_ALLOWANCE; } 
+            else if (postHours < 2 && parseFloat(inputs.special_food.value) === SPECIAL_FOOD_ALLOWANCE) { inputs.special_food.value = ''; }
         }
 
         function updateHoldoverOTState() {
             const postOtElements = [otPostHoursInput, document.getElementById('ot-post-plus'), document.getElementById('ot-post-minus')];
+            const isSpecialDay = shift === 'force' || shift === 'tradition';
             if (otHoldoverActive) {
-                otHoldoverBtn.classList.add('btn-selected');
                 postOtElements.forEach(el => el.disabled = true);
                 otPostHoursInput.value = 0;
                 updateOTUI();
             } else {
-                otHoldoverBtn.classList.remove('btn-selected');
-                postOtElements.forEach(el => el.disabled = (shift === 'force' || shift === 'tradition'));
+                postOtElements.forEach(el => el.disabled = isSpecialDay);
             }
         }
 
         function handleDiligenceStep(direction) {
             const currentValue = parseInt(diligenceInput.value) || 0;
             let currentIndex = DILIGENCE_STEPS.indexOf(currentValue);
-            
             if (currentIndex === -1) { currentIndex = 0; }
-
-            if (direction === 'plus' && currentIndex < DILIGENCE_STEPS.length - 1) {
-                currentIndex++;
-            } else if (direction === 'minus' && currentIndex > 0) {
-                currentIndex--;
-            }
+            if (direction === 'plus' && currentIndex < DILIGENCE_STEPS.length - 1) { currentIndex++; } 
+            else if (direction === 'minus' && currentIndex > 0) { currentIndex--; }
             diligenceInput.value = DILIGENCE_STEPS[currentIndex];
         }
 
@@ -1125,34 +1041,31 @@
 
             document.querySelectorAll('.job-input').forEach(input => { const key = input.dataset.jobKey; const value = parseFloat(input.value); if (!isNaN(value) && value > 0) { data[`job_${key}`] = value; hasValue = true; } else { data[`job_${key}`] = null; } });
             
-            if (!hasValue) { alert('ไม่มีข้อมูลให้บันทึก'); return; }
+            if (!hasValue && !(shift === 'force' || shift === 'tradition')) { alert('ไม่มีข้อมูลให้บันทึก'); return; }
             
             const docRef = doc(db, `artifacts/${appId}/users/${userId}/wages`, selectedDate);
             try {
                 await setDoc(docRef, data);
                 console.log("บันทึกข้อมูลสำเร็จ!");
                 clearForm();
-                setDefaults();
+                calculateAndApplyValues();
             } catch (error) {
                 console.error("เกิดข้อผิดพลาดในการบันทึก: ", error);
                 alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
             }
         }
-        async function deleteData() { if (!selectedDate) return; const docRef = doc(db, `artifacts/${appId}/users/${userId}/wages`, selectedDate); try { await deleteDoc(docRef); console.log("ลบข้อมูลสำเร็จ!"); clearForm(); setDefaults(); hideDeleteModal(); } catch (error) { console.error("เกิดข้อผิดพลาดในการลบ: ", error); hideDeleteModal(); } }
+        async function deleteData() { if (!selectedDate) return; const docRef = doc(db, `artifacts/${appId}/users/${userId}/wages`, selectedDate); try { await deleteDoc(docRef); console.log("ลบข้อมูลสำเร็จ!"); clearForm(); calculateAndApplyValues(); hideDeleteModal(); } catch (error) { console.error("เกิดข้อผิดพลาดในการลบ: ", error); hideDeleteModal(); } }
         
         function updateSummariesAndTable() {
-            const period1 = {};
-            const period2 = {};
-            let period1WorkDays = 0;
-            let period2WorkDays = 0;
+            const period1 = {}, period2 = {};
+            let period1WorkDays = 0, period2WorkDays = 0;
             const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', imv: 'IMV', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
             const table = document.getElementById('details-table');
             const thead = table.querySelector('thead');
             const tableBody = table.querySelector('tbody');
             tableBody.innerHTML = ''; thead.innerHTML = '';
             const headerRow = document.createElement('tr');
-            const staticHeaders = ['วันที่', 'กะ', 'เบอร์รถ', 'รวม'];
-            staticHeaders.forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); });
+            ['วันที่', 'กะ', 'เบอร์รถ', 'รวม'].forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); });
             Object.values(incomeLabels).forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); });
             ['OT ก่อน', 'OT หลัง'].forEach(text => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = text; headerRow.appendChild(th); });
             Object.values(jobPrices).forEach(job => { const th = document.createElement('th'); th.className = 'px-3 py-2'; th.textContent = job.name; headerRow.appendChild(th); });
@@ -1162,25 +1075,24 @@
                 const localDate = new Date(dateStr + 'T00:00:00');
                 const day = localDate.getDate();
                 const targetPeriod = day <= 15 ? period1 : period2;
-                if (day <= 15) { period1WorkDays++; } else { period2WorkDays++; }
+                if(data.shift !== 'force' && data.shift !== 'tradition') {
+                    if (day <= 15) { period1WorkDays++; } else { period2WorkDays++; }
+                }
 
                 let dailyTotal = 0;
                 for(const key in incomeLabels) { const value = parseFloat(data[key]) || 0; if(value > 0) { targetPeriod[key] = (targetPeriod[key] || 0) + value; dailyTotal += value; } }
                 const otPreVal = parseFloat(data.ot_pre) || 0;
                 const otPostVal = parseFloat(data.ot_post) || 0;
-                const otPreHoursVal = parseFloat(data.ot_pre_hours) || 0;
-                const otPostHoursVal = parseFloat(data.ot_post_hours) || 0;
-                if (otPreVal > 0) { dailyTotal += otPreVal; if (!targetPeriod.ot_pre) targetPeriod.ot_pre = { hours: 0, amount: 0 }; targetPeriod.ot_pre.hours += otPreHoursVal || (otPreVal / otPreRate); targetPeriod.ot_pre.amount += otPreVal; }
-                if (otPostVal > 0) { dailyTotal += otPostVal; if (!targetPeriod.ot_post) targetPeriod.ot_post = { hours: 0, amount: 0 }; targetPeriod.ot_post.hours += otPostHoursVal || (otPostVal / otPostRate); targetPeriod.ot_post.amount += otPostVal; }
-                for (const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; if (count > 0) { let jobTotal = 0; if (jobPrices[key].type === 'tiered' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateTieredTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } dailyTotal += jobTotal; const periodKey = `job_${key}`; targetPeriod[periodKey] = (targetPeriod[periodKey] || 0) + jobTotal; } }
+                if (otPreVal > 0) { dailyTotal += otPreVal; if (!targetPeriod.ot_pre) targetPeriod.ot_pre = { hours: 0, amount: 0 }; targetPeriod.ot_pre.hours += data.ot_pre_hours || (otPreVal / otPreRate); targetPeriod.ot_pre.amount += otPreVal; }
+                if (otPostVal > 0) { dailyTotal += otPostVal; if (!targetPeriod.ot_post) targetPeriod.ot_post = { hours: 0, amount: 0 }; targetPeriod.ot_post.hours += data.ot_post_hours || (otPostVal / otPostRate); targetPeriod.ot_post.amount += otPostVal; }
+                for (const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; if (count > 0) { let jobTotal = 0; if (jobPrices[key]?.type === 'tiered' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateTieredTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key]?.price || 0); } dailyTotal += jobTotal; targetPeriod[`job_${key}`] = (targetPeriod[`job_${key}`] || 0) + jobTotal; } }
                 const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ') || '-';
                 const row = document.createElement('tr');
                 row.className = 'table-row hover:bg-tertiary';
                 row.innerHTML = `<td class="px-3 py-2">${localDate.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })}</td><td class="px-3 py-2">${data.shift === 'night' ? '🌙' : '☀️'}</td><td class="px-3 py-2 text-purple-400 font-semibold">${vehicleText}</td><td class="px-3 py-2 font-bold text-green-400">${dailyTotal.toLocaleString()}</td>`;
                 for(const key in incomeLabels) { row.innerHTML += `<td class="px-3 py-2">${(parseFloat(data[key]) || 0).toLocaleString()}</td>`; }
-                row.innerHTML += `<td class="px-3 py-2">${otPreVal.toLocaleString()}</td>`;
-                row.innerHTML += `<td class="px-3 py-2">${otPostVal.toLocaleString()}</td>`;
-                for(const key in jobPrices) { const count = parseFloat(data[`job_${key}`]) || 0; let jobTotal = 0; if (count > 0) { if (jobPrices[key].type === 'tiered' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateTieredTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key].price || 0); } } row.innerHTML += `<td class="px-3 py-2">${jobTotal.toLocaleString()}</td>`; }
+                row.innerHTML += `<td class="px-3 py-2">${otPreVal.toLocaleString()}</td><td class="px-3 py-2">${otPostVal.toLocaleString()}</td>`;
+                for(const key in jobPrices) { let jobTotal = 0; const count = parseFloat(data[`job_${key}`]) || 0; if (count > 0) { if (jobPrices[key]?.type === 'tiered' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateTieredTotal(count, jobPrices[key].price); } else { jobTotal = count * (jobPrices[key]?.price || 0); } } row.innerHTML += `<td class="px-3 py-2">${jobTotal.toLocaleString()}</td>`; }
                 tableBody.appendChild(row);
             });
 
@@ -1189,7 +1101,7 @@
             document.getElementById('work-days-period1').textContent = period1WorkDays;
             document.getElementById('work-days-period2').textContent = period2WorkDays;
 
-            const renderSummary = (periodData, elId, totalElId) => { const el = document.getElementById(elId); el.innerHTML = ''; let total = 0; const sortedKeys = Object.keys(periodData).sort(); sortedKeys.forEach(key => { const value = periodData[key]; let label = incomeLabels[key]; let amount = 0; if (key === 'ot_pre' || key === 'ot_post') { label = key === 'ot_pre' ? `OT ก่อน (${value.hours.toFixed(1)} ชม.)` : `OT หลัง (${value.hours.toFixed(1)} ชม.)`; amount = value.amount; } else if (key.startsWith('job_')) { const jobKey = key.substring(4); label = jobPrices[jobKey]?.name || 'งานพิเศษ'; amount = value; } else { amount = value; } total += amount; if (label) { el.innerHTML += `<p>${label}: <span class="float-right font-semibold">${amount.toLocaleString()}</span></p>`; } }); document.getElementById(totalElId).textContent = total.toLocaleString(); return total; };
+            const renderSummary = (periodData, elId, totalElId) => { const el = document.getElementById(elId); el.innerHTML = ''; let total = 0; Object.keys(periodData).sort().forEach(key => { const value = periodData[key]; let label = incomeLabels[key]; let amount = 0; if (key === 'ot_pre' || key === 'ot_post') { label = key === 'ot_pre' ? `OT ก่อน (${value.hours.toFixed(1)} ชม.)` : `OT หลัง (${value.hours.toFixed(1)} ชม.)`; amount = value.amount; } else if (key.startsWith('job_')) { label = jobPrices[key.substring(4)]?.name || 'งานพิเศษ'; amount = value; } else { amount = value; } total += amount; if (label) { el.innerHTML += `<p>${label}: <span class="float-right font-semibold">${amount.toLocaleString()}</span></p>`; } }); document.getElementById(totalElId).textContent = total.toLocaleString(); return total; };
             const total1 = renderSummary(period1, 'summary-period1', 'total-period1');
             const total2 = renderSummary(period2, 'summary-period2', 'total-period2');
             document.getElementById('monthly-total-display').textContent = `${(total1 + total2).toLocaleString()} บาท`;
@@ -1220,16 +1132,13 @@
                 price = [];
                 document.querySelectorAll('.new-job-price-tiered').forEach(input => {
                     const tierPrice = parseFloat(input.value);
-                    if (!isNaN(tierPrice) && tierPrice >= 0) {
-                        price.push(tierPrice);
-                    }
+                    if (!isNaN(tierPrice) && tierPrice >= 0) { price.push(tierPrice); }
                 });
                 if (price.length === 0) { alert("กรุณาใส่ราคาอย่างน้อย 1 ขั้น"); return; }
             }
 
             const key = `custom_${Date.now()}`;
             jobPrices[key] = { name: name, price: price, step: 1, isDefault: false, type: priceType };
-
             document.getElementById('add-job-modal').style.display = 'none';
             renderAndShowPriceModal(); 
         }
@@ -1260,9 +1169,7 @@
             const incomeLabels = { wage: 'ค่าจ้าง', travel: 'ค่าเดินทาง', food: 'ค่าอาหาร', ot_pre: 'OT ก่อน', ot_post: 'OT หลัง', ot_holdover: 'โอทีขึ้นค้าง', special_food: 'อาหารพิเศษ', night_shift_allowance: 'ค่ากะ', diligence_allowance: 'เบี้ยขยัน' };
 
             const vehicleText = [data.vehicle1, data.vehicle2].filter(Boolean).join(', ');
-            if (vehicleText) {
-                 html += `<p class="pb-2 mb-2 border-b" style="border-color: rgba(255,255,255,0.2)">เบอร์รถ: <span class="float-right font-semibold">${vehicleText}</span></p>`;
-            }
+            if (vehicleText) { html += `<p class="pb-2 mb-2 border-b" style="border-color: rgba(255,255,255,0.2)">เบอร์รถ: <span class="float-right font-semibold">${vehicleText}</span></p>`; }
 
             Object.entries(incomeLabels).forEach(([key, label]) => {
                 const value = parseFloat(data[key]) || 0;
@@ -1276,11 +1183,8 @@
                 const count = parseFloat(data[`job_${key}`]) || 0;
                 if (count > 0) {
                     let jobTotal = 0;
-                    if (jobPrices[key]?.type === 'tiered' && Array.isArray(jobPrices[key].price)) {
-                        jobTotal = calculateTieredTotal(count, jobPrices[key].price);
-                    } else {
-                        jobTotal = count * (jobPrices[key]?.price || 0);
-                    }
+                    if (jobPrices[key]?.type === 'tiered' && Array.isArray(jobPrices[key].price)) { jobTotal = calculateTieredTotal(count, jobPrices[key].price); } 
+                    else { jobTotal = count * (jobPrices[key]?.price || 0); }
                     html += `<p>${jobPrices[key].name}: <span class="float-right font-semibold">${jobTotal.toLocaleString()}</span></p>`;
                     total += jobTotal;
                 }
@@ -1288,7 +1192,7 @@
             bodyEl.innerHTML = html;
             totalEl.textContent = `${total.toLocaleString()} บาท`;
 
-            content.classList.remove('summary-bg-day-pastel', 'summary-bg-night-pastel', 'summary-bg-force', 'summary-bg-tradition');
+            content.className = 'modal-content transition-colors duration-300';
             if (data.shift === 'day') { content.classList.add('summary-bg-day-pastel'); }
             else if (data.shift === 'night') { content.classList.add('summary-bg-night-pastel'); }
             else if (data.shift === 'force') { content.classList.add('summary-bg-force'); }
@@ -1297,13 +1201,9 @@
             modal.style.display = 'flex';
         }
 
-        function hideSummaryModal() {
-            document.getElementById('summary-modal').style.display = 'none';
-        }
-
+        function hideSummaryModal() { document.getElementById('summary-modal').style.display = 'none'; }
         function exportToExcel() { const wb = XLSX.utils.book_new(); const monthName = monthYearEl.textContent; const summaryData = [["สรุปยอด", monthName], [], ["รอบวันที่ 1-15"], ...document.getElementById('summary-period1').innerText.split('\n').map(l => l.split(': ')), ["รวม", document.getElementById('total-period1').innerText], [], ["รอบวันที่ 16-สิ้นเดือน"], ...document.getElementById('summary-period2').innerText.split('\n').map(l => l.split(': ')), ["รวม", document.getElementById('total-period2').innerText]]; const ws1 = XLSX.utils.aoa_to_sheet(summaryData); XLSX.utils.book_append_sheet(wb, ws1, "สรุปยอด"); const table = document.getElementById("details-table"); const ws2 = XLSX.utils.table_to_sheet(table); XLSX.utils.book_append_sheet(wb, ws2, "รายละเอียดรายวัน"); XLSX.writeFile(wb, `สรุปค่าจ้าง-${monthName}.xlsx`); }
         
-        // --- Event Listeners ---
         function setupEventListeners() {
             document.getElementById('prev-month').addEventListener('click', () => changeMonth(-1));
             document.getElementById('next-month').addEventListener('click', () => changeMonth(1));
@@ -1327,14 +1227,12 @@
             document.getElementById('force-day-btn').addEventListener('click', () => { shift = 'force'; payMultiplier = 1; updatePrimaryButtonsUI(); calculateAndApplyValues(); });
             document.getElementById('tradition-day-btn').addEventListener('click', () => { shift = 'tradition'; payMultiplier = 1; updatePrimaryButtonsUI(); calculateAndApplyValues(); });
             
-            document.querySelectorAll('.pay-multiplier-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (shift === 'force' || shift === 'tradition') return;
-                    payMultiplier = parseInt(btn.dataset.multiplier);
-                    updatePrimaryButtonsUI();
-                    calculateAndApplyValues();
-                });
-            });
+            document.querySelectorAll('.pay-multiplier-btn').forEach(btn => btn.addEventListener('click', () => {
+                if (shift === 'force' || shift === 'tradition') return;
+                payMultiplier = parseInt(btn.dataset.multiplier);
+                updatePrimaryButtonsUI();
+                calculateAndApplyValues();
+            }));
             specialJobsContainer.addEventListener('click', e => { const input = e.target.closest('div').querySelector('.job-input'); if (!input) return; const step = parseFloat(input.dataset.step) || 1; let value = parseFloat(input.value) || 0; if (e.target.classList.contains('plus-btn')) value += step; if (e.target.classList.contains('minus-btn')) value -= step; input.value = Math.max(0, value); updateAllJobTotals(); });
             specialJobsContainer.addEventListener('input', e => { if (e.target.classList.contains('job-input')) updateAllJobTotals(); });
             document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
@@ -1350,54 +1248,31 @@
             document.getElementById('ot-post-plus').addEventListener('click', () => { otPostHoursInput.stepUp(); updateOTUI(); });
             document.getElementById('ot-post-minus').addEventListener('click', () => { otPostHoursInput.stepDown(); updateOTUI(); });
             otPostHoursInput.addEventListener('input', updateOTUI);
-            otHoldoverBtn.addEventListener('click', () => {
-                otHoldoverActive = !otHoldoverActive;
-                updateHoldoverOTState();
-            });
+            otHoldoverBtn.addEventListener('click', () => { otHoldoverActive = !otHoldoverActive; updatePrimaryButtonsUI(); updateHoldoverOTState(); });
             // Diligence Stepper listeners
             document.getElementById('diligence-plus').addEventListener('click', () => handleDiligenceStep('plus'));
             document.getElementById('diligence-minus').addEventListener('click', () => handleDiligenceStep('minus'));
             // Summary Modal Listeners
             document.getElementById('summary-modal-close').addEventListener('click', hideSummaryModal);
-            document.getElementById('summary-modal-edit-btn').addEventListener('click', () => {
-                hideSummaryModal();
-                loadDataForDate(selectedDate);
-            });
-            document.getElementById('summary-modal-delete-btn').addEventListener('click', () => {
-                hideSummaryModal();
-                showDeleteModal();
-            });
-            document.querySelectorAll('input[name="price-type"]').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    const container = document.getElementById('new-job-price-container');
-                    if (this.value === 'tiered') {
-                        container.innerHTML = `
-                            <div id="tiered-prices">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <label class="w-20">เที่ยวที่ 1:</label>
-                                    <input type="number" class="new-job-price-tiered w-full input-field rounded p-2">
-                                </div>
-                            </div>
-                            <button id="add-tier-btn" type="button" class="text-sm text-green-400 hover:underline mt-2">+ เพิ่มขั้น</button>
-                        `;
-                        document.getElementById('add-tier-btn').addEventListener('click', () => {
-                            const tierContainer = document.getElementById('tiered-prices');
-                            const newTier = document.createElement('div');
-                            newTier.className = 'flex items-center gap-2 mb-2';
-                            newTier.innerHTML = `
-                                <label class="w-20">เที่ยวที่ ${tierContainer.children.length + 1}:</label>
-                                <input type="number" class="new-job-price-tiered w-full input-field rounded p-2">
-                            `;
-                            tierContainer.appendChild(newTier);
-                        });
-                    } else {
-                        container.innerHTML = `<label>ราคาต่อเที่ยว: <input id="new-job-price-flat" type="number" class="w-full input-field rounded p-2 mt-1"></label>`;
-                    }
-                });
-            });
+            document.getElementById('summary-modal-edit-btn').addEventListener('click', () => { hideSummaryModal(); loadDataForDate(selectedDate); });
+            document.getElementById('summary-modal-delete-btn').addEventListener('click', () => { hideSummaryModal(); showDeleteModal(); });
+            document.querySelectorAll('input[name="price-type"]').forEach(radio => radio.addEventListener('change', function() {
+                const container = document.getElementById('new-job-price-container');
+                if (this.value === 'tiered') {
+                    container.innerHTML = `<div id="tiered-prices"><div class="flex items-center gap-2 mb-2"><label class="w-20">เที่ยวที่ 1:</label><input type="number" class="new-job-price-tiered w-full input-field rounded p-2"></div></div><button id="add-tier-btn" type="button" class="text-sm text-green-400 hover:underline mt-2">+ เพิ่มขั้น</button>`;
+                    document.getElementById('add-tier-btn').addEventListener('click', () => {
+                        const tierContainer = document.getElementById('tiered-prices');
+                        const newTier = document.createElement('div');
+                        newTier.className = 'flex items-center gap-2 mb-2';
+                        newTier.innerHTML = `<label class="w-20">เที่ยวที่ ${tierContainer.children.length + 1}:</label><input type="number" class="new-job-price-tiered w-full input-field rounded p-2">`;
+                        tierContainer.appendChild(newTier);
+                    });
+                } else {
+                    container.innerHTML = `<label>ราคาต่อเที่ยว: <input id="new-job-price-flat" type="number" class="w-full input-field rounded p-2 mt-1"></label>`;
+                }
+            }));
         }
 
-        // --- Main Execution ---
         async function main() {
             await loadSettings();
             const today = new Date();
@@ -1406,7 +1281,6 @@
             selectDate(todayStr);
         }
 
-        // --- Initial setup ---
         const savedThemeIsDark = localStorage.getItem('darkMode') !== 'false';
         applyTheme(savedThemeIsDark);
         setupEventListeners();
