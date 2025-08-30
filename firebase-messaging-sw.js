@@ -1,10 +1,11 @@
 // Import and configure the Firebase SDK
 // This is the "antenna" that listens for messages in the background.
 
+// Scripts for Firebase products are imported on demand
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
-// Initialize the Firebase app in the service worker with your project's configuration
+// Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyAoMrrWGRmd9PuyYtGkK7ZQUDZWdgaoYaE",
     authDomain: "daily-wage-tracking.firebaseapp.com",
@@ -15,6 +16,7 @@ const firebaseConfig = {
     measurementId: "G-QERWN01SXH"
 };
 
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
 // Retrieve an instance of Firebase Messaging so that it can handle background messages.
@@ -26,10 +28,11 @@ messaging.onBackgroundMessage((payload) => {
     payload,
   );
   
+  // Customize notification here
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/firebase-logo.png', // You can change this to your app's icon
+    icon: 'https://placehold.co/192x192/1e88e5/ffffff?text=🔔', // You can change this to your app's icon
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
